@@ -31,22 +31,35 @@
 
 <!-- WiserNotify -->
 <script>
-  !(function () {
+    window.t4hto4 = window.t4hto4 || function() {
+        (t4hto4.q = t4hto4.q || []).push(arguments)
+    };
     if (window.t4hto4) console.log('WiserNotify pixel installed multiple times in this page');
-    else {
-      window.t4hto4 = !0;
-      var t = document,
-        e = window,
-        n = function () {
-          var e = t.createElement('script');
-          (e.type = 'text/javascript'),
-            (e.async = !0),
-            (e.src = 'https://pt.wisernotify.com/pixel.js?ti=1jclj6jkfc4hhry'),
-            document.body.appendChild(e);
+    t4hto4('init', '1jclj6jkfc4hhry');
+    t4hto4('event', 'pageload');
+</script>
+<script>
+    (function(e, r, n) {
+        var t = {};
+        var i = e.getElementsByTagName("script")[0];
+        var s = function() {
+            t._c = {};
+            t._r = Math.random();
+            var n = r.createElement("script");
+            n.type = "text/javascript";
+            n.async = true;
+            n.crossOrigin = "anonymous";
+            n.src = "https://pt.wisernotify.com/pixel.js?ti=1jclj6jkfc4hhry";
+            i.parentNode.insertBefore(n, i);
         };
-      'complete' === t.readyState ? n() : window.attachEvent ? e.attachEvent('onload', n) : e.addEventListener('load', n, !1);
-    }
-  })();
+        if (e.readyState === "complete") {
+            s();
+        } else if (window.addEventListener) {
+            e.addEventListener("load", s, false);
+        } else {
+            e.attachEvent("onload", s);
+        }
+    })(document, document, window);
 </script>
 
 <!-- Microsoft Clarity -->

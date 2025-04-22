@@ -15,6 +15,9 @@ Description:  this file will contains behavior, properties,
 'use strict';
 var flg = '0';
 document.addEventListener('DOMContentLoaded', function () {
+  // Initialize menu functionality
+  menu_click();
+  
   // feather icon start
   feather.replace();
   // feather icon end
@@ -204,8 +207,8 @@ function menu_click() {
   if (navbar) {
     navbar.addEventListener('click', function (event) {
       var target = event.target.closest('li.pc-hasmenu');
-
       if (target) {
+        event.preventDefault();
         event.stopPropagation();
         toggleMenu(target);
       }
@@ -225,6 +228,7 @@ function menu_click() {
     } else {
       closeAllMenus(); // Close other open menus
       targetElement.classList.add('pc-trigger');
+      targetElement.children[1].style.display = 'block';
       slideDown(targetElement.children[1], 200);
     }
   }

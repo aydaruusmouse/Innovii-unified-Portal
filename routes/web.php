@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\SingleServiceController;
 use App\Http\Controllers\ServiceReportController;
+use App\Http\Controllers\EmergencyCreditController;
 // use App\Http\Controllers\OfferController;
 
 Route::prefix('admin1')->name('admin.')->group(function() {
@@ -22,6 +23,11 @@ Route::prefix('admin1')->name('admin.')->group(function() {
 Route::get('/', function () {
     return redirect()->route('status_wise_services');
 });
+
+// Add dashboard route
+Route::get('/dashboard', function () {
+    return view('admin.index');
+})->name('dashboard');
 
 Route::get('/all-services', function () {
     return view('admin.all_services');
@@ -96,3 +102,19 @@ Route::get('/admin1', function () {
 //     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 // });
 // Route::get('/offers', [OfferController::class, 'getOffers']);
+
+// Emergency Credit Routes
+Route::prefix('emergency-credit')->group(function () {
+    Route::get('/daily', [EmergencyCreditController::class, 'daily'])->name('emergency_credit.daily');
+    Route::get('/daily/data', [EmergencyCreditController::class, 'dailyData']);
+    Route::get('/top-users', [EmergencyCreditController::class, 'topUsers'])->name('emergency_credit.top_users');
+    Route::get('/top-users/data', [EmergencyCreditController::class, 'topUsersData']);
+    Route::get('/weekly', [EmergencyCreditController::class, 'weekly'])->name('emergency_credit.weekly');
+    Route::get('/weekly/data', [EmergencyCreditController::class, 'weeklyData']);
+    Route::get('/monthly', [EmergencyCreditController::class, 'monthly'])->name('emergency_credit.monthly');
+    Route::get('/monthly/data', [EmergencyCreditController::class, 'monthlyData']);
+    Route::get('/status', [EmergencyCreditController::class, 'status'])->name('emergency_credit.status');
+    Route::get('/status/data', [EmergencyCreditController::class, 'statusData']);
+    Route::get('/credit-type', [EmergencyCreditController::class, 'creditType'])->name('emergency_credit.credit_type');
+    Route::get('/credit-type/data', [EmergencyCreditController::class, 'creditTypeData']);
+});
