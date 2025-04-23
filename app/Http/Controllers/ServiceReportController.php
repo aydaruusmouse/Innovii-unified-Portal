@@ -126,9 +126,11 @@ class ServiceReportController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             $serviceName = $request->input('service_name');
+            $status = $request->input('status');
 
             // Base query
-            $query = DB::table('subs_in_out_count');
+            $query = DB::table('subs_in_out_count')
+                ->whereIn('status', ['ACTIVE', 'CANCELED']);
 
             // Apply date filters if provided
             if ($startDate) {
@@ -143,44 +145,39 @@ class ServiceReportController extends Controller
                 $query->where('name', $serviceName);
             }
 
+            // Apply status filter if provided and not 'all'
+            if ($status && $status !== 'all') {
+                $query->where('status', $status);
+            }
+
             // Get the data grouped by date and service
             $serviceData = $query->select(
                 'date',
                 'name',
-                DB::raw('SUM(CASE WHEN status = "ACTIVE" THEN base_count ELSE 0 END) as active_count'),
-                DB::raw('SUM(CASE WHEN status = "FAILED" THEN base_count ELSE 0 END) as failed_count'),
-                DB::raw('SUM(CASE WHEN status = "NEW" THEN base_count ELSE 0 END) as new_count'),
-                DB::raw('SUM(CASE WHEN status = "CANCELED" THEN base_count ELSE 0 END) as canceled_count'),
+                'status',
                 DB::raw('SUM(base_count) as total_subs')
             )
-            ->groupBy('date', 'name')
+            ->groupBy('date', 'name', 'status')
             ->orderBy('date', 'desc')
             ->get();
 
             // Calculate totals for the pie chart
-            $totalActive = $serviceData->sum('active_count');
-            $totalFailed = $serviceData->sum('failed_count');
-            $totalNew = $serviceData->sum('new_count');
-            $totalCanceled = $serviceData->sum('canceled_count');
+            $totalActive = $serviceData->where('status', 'ACTIVE')->sum('total_subs');
+            $totalCanceled = $serviceData->where('status', 'CANCELED')->sum('total_subs');
 
             // Prepare table data
             $tableData = $serviceData->map(function ($item) {
                 return [
                     'date' => $item->date,
                     'name' => $item->name,
-                    'total_subs' => $item->total_subs,
-                    'active' => $item->active_count,
-                    'failed' => $item->failed_count,
-                    'new' => $item->new_count,
-                    'canceled' => $item->canceled_count
+                    'status' => $item->status,
+                    'total_subs' => $item->total_subs
                 ];
             });
 
             return response()->json([
                 'status_totals' => [
                     'active' => $totalActive,
-                    'failed' => $totalFailed,
-                    'new' => $totalNew,
                     'canceled' => $totalCanceled
                 ],
                 'table_data' => $tableData,

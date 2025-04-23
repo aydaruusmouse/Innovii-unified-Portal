@@ -582,12 +582,13 @@ class EmergencyCreditController extends Controller
                 ->table('subs_in_out as sio')
                 ->join('subscription_base as sb', 'sio.subscription_id', '=', 'sb.id')
                 ->select(
-                    'sb.name as service_name',
+                    'sb.name as name',
                     'sio.status',
                     DB::raw('COUNT(*) as total_subs'),
                     DB::raw('COUNT(DISTINCT sio.msisdn) as unique_users'),
                     DB::raw('DATE(sio.created_at) as date')
                 )
+                ->whereIn('sio.status', ['ACTIVE', 'CANCELED'])
                 ->when($startDate, function ($query) use ($startDate) {
                     return $query->whereDate('sio.created_at', '>=', $startDate);
                 })
@@ -608,8 +609,6 @@ class EmergencyCreditController extends Controller
             // Calculate status totals
             $statusTotals = [
                 'active' => 0,
-                'failed' => 0,
-                'new' => 0,
                 'canceled' => 0
             ];
 
@@ -628,8 +627,18 @@ class EmergencyCreditController extends Controller
                 }
             }
 
+            // Format the data for the table
+            $tableData = $data->map(function ($row) {
+                return [
+                    'date' => $row->date,
+                    'name' => $row->name,
+                    'status' => $row->status,
+                    'total_subs' => $row->total_subs
+                ];
+            });
+
             return response()->json([
-                'table_data' => $data,
+                'table_data' => $tableData,
                 'status_totals' => $statusTotals,
                 'dates' => $dates,
                 'subscription_totals' => $subscriptionTotals

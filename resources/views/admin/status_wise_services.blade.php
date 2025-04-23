@@ -78,8 +78,6 @@
                                     <select class="form-select" id="statusFilter">
                                         <option value="all">All Status</option>
                                         <option value="ACTIVE">Active</option>
-                                        <option value="FAILED">Failed</option>
-                                        <option value="NEW">New</option>
                                         <option value="CANCELED">Canceled</option>
                                     </select>
                                 </div>
@@ -303,10 +301,10 @@
             let statusDistributionChart = new Chart(document.getElementById("statusDistributionChart").getContext("2d"), {
                 type: "pie",
                 data: {
-                    labels: ["Active", "Failed", "New", "Canceled"],
+                    labels: ["Active", "Canceled"],
                     datasets: [{
-                        data: [0, 0, 0, 0],
-                        backgroundColor: ["#28a745", "#dc3545", "#ffc107", "#6c757d"]
+                        data: [0, 0],
+                        backgroundColor: ["#28a745", "#dc3545"]
                     }]
                 },
                 options: {
@@ -372,8 +370,6 @@
                     // Update Status Chart
                     statusDistributionChart.data.datasets[0].data = [
                         data.status_totals.active,
-                        data.status_totals.failed,
-                        data.status_totals.new,
                         data.status_totals.canceled
                     ];
                     statusDistributionChart.update();
@@ -406,9 +402,9 @@
                     });
 
                     // Update metrics
-                    document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.failed + data.status_totals.new + data.status_totals.canceled;
+                    document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.canceled;
                     document.getElementById('activeServices').textContent = data.status_totals.active;
-                    document.getElementById('inactiveServices').textContent = data.status_totals.failed;
+                    document.getElementById('inactiveServices').textContent = data.status_totals.canceled;
                     document.getElementById('gracePeriod').textContent = data.status_totals.new;
                 })
                 .catch(error => {
@@ -426,12 +422,8 @@
             switch(status) {
                 case 'ACTIVE':
                     return 'bg-success';
-                case 'FAILED':
-                    return 'bg-danger';
-                case 'NEW':
-                    return 'bg-primary';
                 case 'CANCELED':
-                    return 'bg-warning';
+                    return 'bg-danger';
                 default:
                     return 'bg-secondary';
             }
