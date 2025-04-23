@@ -6,182 +6,10 @@
     @include('layouts.heads_css')
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-      .card {
-        transition: transform 0.2s;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      }
-      
-      .card:hover {
-        transform: translateY(-2px);
-      }
-
-      .stats-card {
-        background: #fff;
-        padding: 1rem;
-      }
-
-      .stats-card h6 {
-        color: #6c757d;
-        font-weight: 500;
-        font-size: 0.875rem;
-        margin-bottom: 0.5rem;
-      }
-
-      .stats-card h3 {
-        margin: 0.5rem 0;
-        color: #2c3e50;
-        font-size: 1.5rem;
-      }
-
-      .search-container {
-        background: #fff;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-      }
-
-      .search-input {
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-      }
-
-      .search-input:focus {
-        border-color: #80bdff;
-        box-shadow: 0 0 0 0.1rem rgba(0, 123, 255, 0.25);
-      }
-
-      .search-btn {
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-      }
-
-      .table {
-        margin-bottom: 0;
-        font-size: 0.875rem;
-      }
-
-      .table thead th {
-        background: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        padding: 0.75rem;
-        font-weight: 500;
-        font-size: 0.75rem;
-        text-transform: uppercase;
-      }
-
-      .table tbody td {
-        padding: 0.75rem;
-        vertical-align: middle;
-      }
-
-      .badge {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        font-weight: 500;
-        border-radius: 4px;
-      }
-
-      .badge.bg-success {
-        background-color: #e3f2fd !important;
-        color: #0d6efd !important;
-        border: 1px solid #90caf9;
-      }
-
-      .badge.bg-danger {
-        background-color: #ffebee !important;
-        color: #dc3545 !important;
-        border: 1px solid #ffcdd2;
-      }
-
-      .btn-info {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.75rem;
-        border-radius: 4px;
-      }
-
-      .pagination {
-        margin-top: 1rem;
-      }
-
-      .page-link {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-        border-radius: 4px;
-        margin: 0 0.125rem;
-      }
-
-      .modal-content {
-        border-radius: 8px;
-      }
-
-      .modal-header {
-        padding: 1rem;
-        background-color: #f8f9fa;
-      }
-
-      .modal-body {
-        padding: 1rem;
-      }
-
-      .modal-body p {
-        margin-bottom: 0.5rem;
-        padding: 0.5rem;
-        font-size: 0.875rem;
-      }
-
-      .chart-container {
-        padding: 1rem;
-        height: 100%;
-      }
-
-      .progress {
-        height: 6px;
-        border-radius: 3px;
-      }
-
-      .progress-bar {
-        border-radius: 3px;
-      }
-
-      .card-header {
-        padding: 1rem;
-        background: transparent;
-        border-bottom: 1px solid #e9ecef;
-      }
-
-      .card-header h5 {
-        font-size: 1rem;
-        margin: 0;
-        color: #2c3e50;
-      }
-
-      .card-body {
-        padding: 1rem;
-      }
-
-      @media (max-width: 768px) {
-        .search-container {
-          padding: 0.75rem;
-        }
-        
-        .stats-card {
-          margin-bottom: 0.75rem;
-        }
-
-        .table-responsive {
-          border-radius: 8px;
-        }
-
-        .modal-body {
-          padding: 0.75rem;
-        }
-      }
-    </style>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- XLSX Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
   </head>
   <!-- [Head] end -->
   <!-- [Body] Start -->
@@ -192,30 +20,48 @@
     <!-- [ Main Content ] start -->
     <div class="pc-container">
       <div class="pc-content">
-        <!-- Search Section -->
-        <div class="search-container">
-          <div class="row g-2">
-            <div class="col-md-8">
-              <input type="text" class="form-control search-input" id="searchOffers" placeholder="Search offers by name, code or status...">
+      <div class="page-header">
+          <div class="page-block">
+            <div class="row align-items-center">
+              <div class="col-md-12">
+                <div class="page-header-title">
+                  <h5 class="m-b-10">Service Overview</h5>
+                </div>
+                <ul class="breadcrumb">
+                  <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item">SDF Reports</li>
+                  <li class="breadcrumb-item">Service Overview</li>
+                </ul>
+              </div>
             </div>
-            <div class="col-md-4">
-              <button class="btn btn-primary search-btn w-100" id="searchBtn">
-                <i class="feather icon-search me-1"></i>Search
-              </button>
+          </div>
+        </div>
+        <!-- Search Section -->
+        <div class="card mb-4">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-8">
+                <input type="text" class="form-control" id="searchOffers" placeholder="Search offers by name, code or status...">
+              </div>
+              <div class="col-md-4">
+                <button class="btn btn-primary w-100" id="searchBtn">
+                  <i class="bi bi-search me-2"></i>Search
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- Statistics Cards -->
-        <div class="row g-3 mb-3">
+        <div class="row g-4 mb-4">
           <div class="col-md-6">
-            <div class="card stats-card">
-              <div class="card-body p-0">
-                <h6>Total Offers</h6>
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted mb-3">Total Offers</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
                     <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalOffers">
-                      <i class="feather icon-arrow-up text-primary f-24 m-r-5"></i>
+                      <i class="bi bi-arrow-up text-primary f-24 m-r-5"></i>
                       <span>Loading...</span>
                     </h3>
                   </div>
@@ -223,20 +69,20 @@
                     <p class="m-b-0 text-muted small">100%</p>
                   </div>
                 </div>
-                <div class="progress m-t-20">
+                <div class="progress mt-3">
                   <div class="progress-bar bg-primary" role="progressbar" style="width: 100%" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
               </div>
             </div>
           </div>
           <div class="col-md-6">
-            <div class="card stats-card">
-              <div class="card-body p-0">
-                <h6>Active Offers</h6>
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted mb-3">Active Offers</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
                     <h3 class="f-w-300 d-flex align-items-center m-b-0" id="activeOffers">
-                      <i class="feather icon-arrow-up text-primary f-24 m-r-5"></i>
+                      <i class="bi bi-arrow-up text-primary f-24 m-r-5"></i>
                       <span>Loading...</span>
                     </h3>
                   </div>
@@ -244,7 +90,7 @@
                     <p class="m-b-0 text-muted small" id="activeOffersPercentage">0%</p>
                   </div>
                 </div>
-                <div class="progress m-t-20">
+                <div class="progress mt-3">
                   <div class="progress-bar bg-primary" role="progressbar" id="activeOffersProgress" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>
               </div>
@@ -252,13 +98,15 @@
           </div>
         </div>
 
-        <!-- Main Content Section -->
-        <div class="row g-3">
-          <!-- Offers Table -->
+        <!-- Services Table and Chart Section -->
+        <div class="row">
           <div class="col-md-8">
-            <div class="card">
-              <div class="card-header">
-                <h5>Offers List</h5>
+            <div class="card mb-4">
+              <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Services Overview</h6>
+                <button type="button" class="btn btn-success" id="exportBtn">
+                  <i class="bi bi-file-excel"></i> Export to Excel
+                </button>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
@@ -277,8 +125,8 @@
                     <tbody id="offersList">
                       <tr>
                         <td colspan="7" class="text-center">
-                          <div class="loading">
-                            <i class="feather icon-loader spin me-1"></i>
+                          <div class="d-flex align-items-center justify-content-center py-4">
+                            <i class="bi bi-arrow-repeat spin me-2"></i>
                             Loading offers...
                           </div>
                         </td>
@@ -286,7 +134,7 @@
                     </tbody>
                   </table>
                 </div>
-                <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex justify-content-between align-items-center p-3">
                   <div id="paginationInfo" class="text-muted small"></div>
                   <nav aria-label="Page navigation">
                     <ul class="pagination mb-0" id="paginationLinks">
@@ -297,15 +145,14 @@
               </div>
             </div>
           </div>
-
-          <!-- Chart Section -->
           <div class="col-md-4">
-            <div class="card h-100">
-              <div class="card-header">
-                <h5>Top 3 Most Popular Offers</h5>
+            <div class="card">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Top 3 Most Popular Offers</h5>
+                <span class="badge bg-primary">Live</span>
               </div>
               <div class="card-body">
-                <div class="chart-container">
+                <div class="chart-container" style="height: 200px;">
                   <canvas id="topOffersChart"></canvas>
                 </div>
               </div>
@@ -339,6 +186,24 @@
         let currentPage = 1;
         let totalPages = 1;
         let searchQuery = '';
+
+        // Add export button click handler
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const table = document.querySelector('.table');
+            if (!table) {
+                console.error('Table not found');
+                return;
+            }
+            
+            try {
+                const wb = XLSX.utils.table_to_book(table, {sheet: "Services Overview"});
+                const fileName = `services_overview_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                alert('Error exporting to Excel. Please try again.');
+            }
+        });
 
         // Fetch data from backend on page load
         fetchOffersData(currentPage);
@@ -398,18 +263,18 @@
                                 <td>${offer.name || 'N/A'}</td>
                                 <td>${offer.short_code || 'N/A'}</td>
                                 <td>
-                                    <span class="badge ${offer.status === 'ACTIVE' ? 'bg-success' : 'bg-danger'}">
+                                    <span class="badge ${offer.status === 'ACTIVE' ? 'bg-primary' : 'bg-danger'}">
                                         ${offer.status || 'inactive'}
                                     </span>
                                 </td>
                                 <td>${offer.validity || 'N/A'}</td>
                                 <td>${offer.app_id || 'N/A'}</td>
                                 <td>
-                                    <button class="btn btn-info btn-sm" 
+                                    <button class="btn btn-sm btn-info" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#offerDetailsModal"
                                             data-offer='${JSON.stringify(offer)}'>
-                                        View Details
+                                        <i class="bi bi-eye"></i>
                                     </button>
                                 </td>
                             `;
@@ -474,13 +339,27 @@
                         button.addEventListener('click', function() {
                             const offerData = JSON.parse(this.getAttribute('data-offer'));
                             const modalContent = `
-                                <p><strong>ID:</strong> ${offerData.id}</p>
-                                <p><strong>Name:</strong> ${offerData.name}</p>
-                                <p><strong>Short Code:</strong> ${offerData.short_code}</p>
-                                <p><strong>Status:</strong> ${offerData.status}</p>
-                                <p><strong>Validity:</strong> ${offerData.validity}</p>
-                                <p><strong>App ID:</strong> ${offerData.app_id}</p>
-                                <p><strong>Message:</strong> ${offerData.message || 'N/A'}</p>
+                                <div class="mb-3">
+                                    <strong>ID:</strong> ${offerData.id}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Name:</strong> ${offerData.name}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Short Code:</strong> ${offerData.short_code}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Status:</strong> ${offerData.status}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Validity:</strong> ${offerData.validity}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>App ID:</strong> ${offerData.app_id}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Message:</strong> ${offerData.message || 'N/A'}
+                                </div>
                             `;
                             document.getElementById('modalOfferDetails').innerHTML = modalContent;
                         });
@@ -504,42 +383,83 @@
                                     label: 'Subscriber Count',
                                     data: data.topOffers.map(offer => offer.subscriber_count || 0),
                                     backgroundColor: [
-                                        '#e3f2fd',
-                                        '#bbdefb',
-                                        '#90caf9'
+                                        'rgba(13, 110, 253, 0.8)',
+                                        'rgba(13, 110, 253, 0.6)',
+                                        'rgba(13, 110, 253, 0.4)'
                                     ],
                                     borderColor: [
-                                        '#90caf9',
-                                        '#90caf9',
-                                        '#90caf9'
+                                        'rgba(13, 110, 253, 1)',
+                                        'rgba(13, 110, 253, 1)',
+                                        'rgba(13, 110, 253, 1)'
                                     ],
-                                    borderWidth: 1
+                                    borderWidth: 1,
+                                    borderRadius: 8,
+                                    barThickness: 45,
+                                    maxBarThickness: 50,
+                                    minBarLength: 5,
+                                    barPercentage: 0.8,
+                                    categoryPercentage: 0.9
                                 }]
                             },
                             options: {
                                 responsive: true,
+                                maintainAspectRatio: false,
                                 plugins: {
                                     legend: {
                                         display: false
                                     },
                                     title: {
-                                        display: true,
-                                        text: 'Top 3 Offers by Subscriber Count'
+                                        display: false
+                                    },
+                                    tooltip: {
+                                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                        padding: 10,
+                                        titleFont: {
+                                            size: 14,
+                                            weight: 'bold'
+                                        },
+                                        bodyFont: {
+                                            size: 13
+                                        },
+                                        callbacks: {
+                                            label: function(context) {
+                                                return `Subscribers: ${context.raw.toLocaleString()}`;
+                                            }
+                                        }
                                     }
                                 },
                                 scales: {
                                     y: {
                                         beginAtZero: true,
-                                        title: {
+                                        grid: {
                                             display: true,
-                                            text: 'Number of Subscribers'
+                                            color: 'rgba(0, 0, 0, 0.05)'
+                                        },
+                                        ticks: {
+                                            font: {
+                                                size: 12
+                                            }
                                         }
                                     },
                                     x: {
-                                        title: {
-                                            display: true,
-                                            text: 'Offers'
+                                        grid: {
+                                            display: false
+                                        },
+                                        ticks: {
+                                            font: {
+                                                size: 12
+                                            },
+                                            maxRotation: 45,
+                                            minRotation: 45
                                         }
+                                    }
+                                },
+                                layout: {
+                                    padding: {
+                                        left: 10,
+                                        right: 10,
+                                        top: 10,
+                                        bottom: 10
                                     }
                                 }
                             }
@@ -572,6 +492,16 @@
             searchQuery = document.getElementById("searchOffers").value.trim();
             currentPage = 1;
             fetchOffersData(currentPage);
+        });
+
+        // Add Enter key functionality for search
+        document.getElementById("searchOffers").addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                searchQuery = this.value.trim();
+                currentPage = 1;
+                fetchOffersData(currentPage);
+            }
         });
     });
     </script>

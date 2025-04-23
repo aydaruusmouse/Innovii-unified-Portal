@@ -49,9 +49,11 @@
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select" id="status" name="status">
                       <option value="">All Status</option>
-                      <option value="SUCCESS">Success</option>
-                      <option value="FAILED">Failed</option>
-                      <option value="PENDING">Pending</option>
+                      <option value="DECLINED">Declined</option>
+                      <option value="REPAID">Repaid</option>
+                      <option value="CREDIT">Credit</option>
+                      <option value="NEW">New</option>
+                      <option value="CREDIT_FAILED">Credit Failed</option>
                     </select>
                   </div>
                   <div class="col-md-4 d-flex align-items-end">
@@ -66,80 +68,76 @@
 
         <!-- [ Main Content ] start -->
         <div class="row">
-          <!-- [ Daily Stats ] start -->
-          <div class="col-md-12">
+          <!-- [ Stats Cards ] start -->
+          <div class="col-md-3">
             <div class="card">
-              <div class="card-header">
-                <h5>Today's Statistics</h5>
-              </div>
               <div class="card-body">
-                <div class="row">
-                  <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                      <div class="card-body">
-                        <h6 class="text-white">Unique Users</h6>
-                        <h3 class="text-white" id="uniqueUsers">
-                          <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                      <div class="card-body">
-                        <h6 class="text-white">Total Transactions</h6>
-                        <h3 class="text-white" id="totalTransactions">
-                          <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                      <div class="card-body">
-                        <h6 class="text-white">Total Units</h6>
-                        <h3 class="text-white" id="totalUnits">
-                          <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="col-md-3">
-                    <div class="card bg-warning text-white">
-                      <div class="card-body">
-                        <h6 class="text-white">Average Units</h6>
-                        <h3 class="text-white" id="avgUnits">
-                          <div class="spinner-border spinner-border-sm" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                          </div>
-                        </h3>
-                      </div>
-                    </div>
+                <h6 class="text-muted">Unique Users</h6>
+                <div class="d-flex align-items-center">
+                  <h3 id="uniqueUsers">-</h3>
+                  <div id="uniqueUsersLoading" class="spinner-border spinner-border-sm text-primary ms-2" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- [ Daily Stats ] end -->
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Total Transactions</h6>
+                <div class="d-flex align-items-center">
+                  <h3 id="totalTransactions">-</h3>
+                  <div id="totalTransactionsLoading" class="spinner-border spinner-border-sm text-primary ms-2" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Total Units</h6>
+                <div class="d-flex align-items-center">
+                  <h3 id="totalUnits">-</h3>
+                  <div id="totalUnitsLoading" class="spinner-border spinner-border-sm text-primary ms-2" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="text-muted">Average Units</h6>
+                <div class="d-flex align-items-center">
+                  <h3 id="avgUnits">-</h3>
+                  <div id="avgUnitsLoading" class="spinner-border spinner-border-sm text-primary ms-2" style="display: none;">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- [ Stats Cards ] end -->
 
-          <!-- [ Top Users ] start -->
+          <!-- [ Top Users Table ] start -->
           <div class="col-md-12">
             <div class="card">
               <div class="card-header">
-                <h5>Top Users Today</h5>
+                <h5>Top Users</h5>
+                <button type="button" class="btn btn-success float-end" id="exportBtn">
+                  <i class="bi bi-file-excel"></i> Export to Excel
+                </button>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
                   <table class="table table-striped">
                     <thead>
                       <tr>
-                        <th>#</th>
+                        <th>Rank</th>
                         <th>MSISDN</th>
                         <th>Transaction Count</th>
                       </tr>
@@ -158,7 +156,7 @@
               </div>
             </div>
           </div>
-          <!-- [ Top Users ] end -->
+          <!-- [ Top Users Table ] end -->
         </div>
         <!-- [ Main Content ] end -->
       </div>
@@ -171,13 +169,56 @@
     document.addEventListener('DOMContentLoaded', function() {
       const filterForm = document.getElementById('filterForm');
       
+      function showLoading() {
+        document.getElementById('uniqueUsersLoading').style.display = 'inline-block';
+        document.getElementById('totalTransactionsLoading').style.display = 'inline-block';
+        document.getElementById('totalUnitsLoading').style.display = 'inline-block';
+        document.getElementById('avgUnitsLoading').style.display = 'inline-block';
+        document.getElementById('topUsersTable').innerHTML = `
+          <tr>
+            <td colspan="3" class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
+      function hideLoading() {
+        document.getElementById('uniqueUsersLoading').style.display = 'none';
+        document.getElementById('totalTransactionsLoading').style.display = 'none';
+        document.getElementById('totalUnitsLoading').style.display = 'none';
+        document.getElementById('avgUnitsLoading').style.display = 'none';
+      }
+      
+      function exportTableToExcel() {
+        const table = document.querySelector('.table');
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Daily Top Users"});
+        const fileName = `emergency_credit_daily_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+      }
+
       function fetchData(params = {}) {
+        showLoading();
+        
+        console.log('Request parameters:', params);
+        
         const url = new URL('http://127.0.0.1:8000/emergency-credit/daily/data');
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
+        console.log('Request URL:', url.toString());
+        
         fetch(url)
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then(data => {
+            console.log('Response data:', data);
+            
             // Update stats
             document.getElementById('uniqueUsers').textContent = data.dailyStats.unique_users || 0;
             document.getElementById('totalTransactions').textContent = data.dailyStats.total_transactions || 0;
@@ -209,6 +250,9 @@
               el.textContent = '-';
             });
             document.getElementById('topUsersTable').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error loading data</td></tr>';
+          })
+          .finally(() => {
+            hideLoading();
           });
       }
 
@@ -224,6 +268,24 @@
           if (value) params[key] = value;
         });
         fetchData(params);
+      });
+
+      // Add export button click handler
+      document.getElementById('exportBtn').addEventListener('click', function() {
+        const table = document.querySelector('.table');
+        if (!table) {
+          console.error('Table not found');
+          return;
+        }
+        
+        try {
+          const wb = XLSX.utils.table_to_book(table, {sheet: "Daily Statistics"});
+          const fileName = `emergency_credit_daily_${new Date().toISOString().split('T')[0]}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+        } catch (error) {
+          console.error('Error exporting to Excel:', error);
+          alert('Error exporting to Excel. Please try again.');
+        }
       });
     });
     </script>

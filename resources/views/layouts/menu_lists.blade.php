@@ -1,3 +1,4 @@
+
 <li class="pc-item">
   <a href="../dashboard/index.html" class="pc-link">
     <span class="pc-micon">
@@ -26,7 +27,7 @@
       <a href="{{ route('single_service') }}" class="pc-link" style="font-size: 14px;">Subscription Analytics</a>
     </li>
     <li class="pc-item">
-      <a href="{{ route('status_services') }}" class="pc-link" style="font-size: 14px;">Performance Metrics</a>
+      <a href="{{ route('status_wise_services') }}" class="pc-link" style="font-size: 14px;">Status Wise Services</a>
     </li>
     <li class="pc-item">
       <a href="#!" class="pc-link" style="font-size: 14px;">Trend Analysis</a>
@@ -159,5 +160,3 @@
 
   </ul>
 </li>
-
-

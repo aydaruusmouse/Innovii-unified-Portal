@@ -35,8 +35,6 @@ Route::get('/all-services', function () {
 
 Route::get('/single-service', [ServiceReportController::class, 'index'])->name('single_service');
 Route::get('/status-wise-services', [ServiceReportController::class, 'statusWiseServices'])->name('status_wise_services');
-Route::get('/status-services', [ServiceReportController::class, 'statusWiseServices'])->name('status_services');
-
 Route::get('/status-insight', function () {
     return view('admin.subscription_insight');
 })->name('subscription_insight');
@@ -117,4 +115,6 @@ Route::prefix('emergency-credit')->group(function () {
     Route::get('/status/data', [EmergencyCreditController::class, 'statusData']);
     Route::get('/credit-type', [EmergencyCreditController::class, 'creditType'])->name('emergency_credit.credit_type');
     Route::get('/credit-type/data', [EmergencyCreditController::class, 'creditTypeData']);
+    Route::get('/status-wise-services', [EmergencyCreditController::class, 'statusWiseService'])->name('status.wise.services');
+    Route::get('/api/v1/status-wise-report', [EmergencyCreditController::class, 'statusWiseServiceData']);
 });

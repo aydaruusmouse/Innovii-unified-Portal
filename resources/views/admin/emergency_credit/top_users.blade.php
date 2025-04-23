@@ -35,13 +35,40 @@
         </div>
         <!-- [ breadcrumb ] end -->
 
+        <!-- [ Filter Section ] start -->
+        <div class="row">
+          <div class="col-md-12">
+            <div class="card">
+              <div class="card-body">
+                <form id="filterForm" class="row g-3">
+                  <div class="col-md-4">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ date('Y-m-d', strtotime('-30 days')) }}">
+                  </div>
+                  <div class="col-md-4">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ date('Y-m-d') }}">
+                  </div>
+                  <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Apply Filters</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- [ Filter Section ] end -->
+
         <!-- [ Main Content ] start -->
         <div class="row">
           <!-- [ Top Users Table ] start -->
           <div class="col-md-12">
             <div class="card">
               <div class="card-header">
-                <h5>Top Users</h5>
+                <h5>Top Users Statistics</h5>
+                <button type="button" class="btn btn-success float-end" id="exportBtn">
+                  <i class="bi bi-file-excel"></i> Export to Excel
+                </button>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
@@ -66,6 +93,20 @@
                     </tbody>
                   </table>
                 </div>
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div class="text-muted" id="paginationInfo">
+                    Showing 0 to 0 of 0 entries
+                  </div>
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary" id="prevPage" disabled>
+                      <i class="bi bi-chevron-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="nextPage" disabled>
+                      Next <i class="bi bi-chevron-right"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -80,34 +121,139 @@
 
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Fetch data
-      fetch('/emergency-credit/top-users/data')
-        .then(response => response.json())
-        .then(data => {
-          const tbody = document.getElementById('topUsersTable');
-          tbody.innerHTML = '';
-          
-          if (data.topUsers.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users found</td></tr>';
-            return;
-          }
+      const filterForm = document.getElementById('filterForm');
+      let currentPage = 1;
+      
+      function showLoading() {
+        document.getElementById('topUsersTable').innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
 
-          data.topUsers.forEach((user, index) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-              <td>${index + 1}</td>
-              <td>${user.msisdn}</td>
-              <td>${user.txn_count}</td>
-              <td>${user.total_amount}</td>
-              <td>${user.last_transaction}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        })
-        .catch(error => {
-          console.error('Error fetching data:', error);
-          document.getElementById('topUsersTable').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>';
+      function updatePaginationInfo(pagination) {
+        const from = pagination.from || 0;
+        const to = pagination.to || 0;
+        const total = pagination.total || 0;
+        const currentPage = pagination.current_page || 1;
+        const lastPage = pagination.last_page || 1;
+        
+        document.getElementById('paginationInfo').textContent = `Showing ${from} to ${to} of ${total} entries`;
+        
+        // Update pagination buttons
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        
+        if (prevBtn) {
+          prevBtn.disabled = currentPage <= 1;
+          prevBtn.onclick = () => {
+            if (currentPage > 1) {
+              loadPage(currentPage - 1);
+            }
+          };
+        }
+        
+        if (nextBtn) {
+          nextBtn.disabled = currentPage >= lastPage;
+          nextBtn.onclick = () => {
+            if (currentPage < lastPage) {
+              loadPage(currentPage + 1);
+            }
+          };
+        }
+      }
+
+      function loadPage(page) {
+        const formData = new FormData(filterForm);
+        const params = {};
+        formData.forEach((value, key) => {
+          if (value) params[key] = value;
         });
+        params.page = page;
+        fetchData(params);
+      }
+      
+      function exportTableToExcel() {
+        const table = document.querySelector('.table');
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Top Users"});
+        const fileName = `emergency_credit_top_users_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+      }
+
+      function fetchData(params = {}) {
+        showLoading();
+        
+        const url = new URL('http://127.0.0.1:8000/emergency-credit/top-users/data');
+        Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+        
+        fetch(url)
+          .then(response => response.json())
+          .then(data => {
+            const tbody = document.getElementById('topUsersTable');
+            tbody.innerHTML = '';
+            
+            if (!data.data || data.data.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center">No users found</td></tr>';
+              return;
+            }
+
+            data.data.forEach((user, index) => {
+              const tr = document.createElement('tr');
+              tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${user.msisdn}</td>
+                <td>${user.txn_count}</td>
+                <td>${user.total_amount}</td>
+                <td>${new Date(user.last_transaction).toLocaleString()}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+
+            // Update pagination info
+            updatePaginationInfo(data);
+          })
+          .catch(error => {
+            console.error('Error fetching data:', error);
+            document.getElementById('topUsersTable').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>';
+          });
+      }
+
+      // Initial data load
+      fetchData();
+
+      // Handle form submission
+      filterForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const params = {};
+        formData.forEach((value, key) => {
+          if (value) params[key] = value;
+        });
+        fetchData(params);
+      });
+
+      // Add export button click handler
+      document.getElementById('exportBtn').addEventListener('click', function() {
+        const table = document.querySelector('.table');
+        if (!table) {
+          console.error('Table not found');
+          return;
+        }
+        
+        try {
+          const wb = XLSX.utils.table_to_book(table, {sheet: "Top Users Statistics"});
+          const fileName = `emergency_credit_top_users_${new Date().toISOString().split('T')[0]}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+        } catch (error) {
+          console.error('Error exporting to Excel:', error);
+          alert('Error exporting to Excel. Please try again.');
+        }
+      });
     });
     </script>
   </body>

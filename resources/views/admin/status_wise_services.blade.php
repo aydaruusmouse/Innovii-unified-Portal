@@ -352,59 +352,69 @@
                 const selectedService = serviceFilter.value;
                 const selectedStatus = statusFilter.value;
 
-                fetch(`/api/v1/status-wise-report?start_date=${selectedStartDate}&end_date=${selectedEndDate}&service_name=${selectedService}&status=${selectedStatus}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.error) {
-                            throw new Error(data.message || data.error);
-                        }
+                fetch(`/api/v1/status-wise-report?start_date=${selectedStartDate}&end_date=${selectedEndDate}&service_name=${selectedService}&status=${selectedStatus}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.error) {
+                        throw new Error(data.message || data.error);
+                    }
 
-                        // Update Status Chart
-                        statusDistributionChart.data.datasets[0].data = [
-                            data.status_totals.active,
-                            data.status_totals.failed,
-                            data.status_totals.new,
-                            data.status_totals.canceled
-                        ];
-                        statusDistributionChart.update();
+                    // Update Status Chart
+                    statusDistributionChart.data.datasets[0].data = [
+                        data.status_totals.active,
+                        data.status_totals.failed,
+                        data.status_totals.new,
+                        data.status_totals.canceled
+                    ];
+                    statusDistributionChart.update();
 
-                        // Update Subscription Chart
-                        subscriptionTrendChart.data.labels = data.dates;
-                        subscriptionTrendChart.data.datasets[0].data = data.subscription_totals;
-                        subscriptionTrendChart.update();
+                    // Update Subscription Chart
+                    subscriptionTrendChart.data.labels = data.dates;
+                    subscriptionTrendChart.data.datasets[0].data = data.subscription_totals;
+                    subscriptionTrendChart.update();
 
-                        // Update Table
-                        servicesTableBody.innerHTML = '';
-                        data.table_data.forEach(row => {
-                            const tr = document.createElement('tr');
-                            tr.innerHTML = `
-                                <td>${row.date}</td>
-                                <td>${row.name}</td>
-                                <td>
-                                    <span class="badge ${getStatusBadgeClass(row.status)}">
-                                        ${row.status || 'N/A'}
-                                    </span>
-                                </td>
-                                <td>${row.total_subs || 0}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info view-details" data-service="${row.name}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td>
-                            `;
-                            servicesTableBody.appendChild(tr);
-                        });
-
-                        // Update metrics
-                        document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.failed + data.status_totals.new + data.status_totals.canceled;
-                        document.getElementById('activeServices').textContent = data.status_totals.active;
-                        document.getElementById('inactiveServices').textContent = data.status_totals.failed;
-                        document.getElementById('gracePeriod').textContent = data.status_totals.new;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching status-wise report:', error);
-                        alert('Error fetching data: ' + error.message);
+                    // Update Table
+                    servicesTableBody.innerHTML = '';
+                    data.table_data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.date}</td>
+                            <td>${row.name}</td>
+                            <td>
+                                <span class="badge ${getStatusBadgeClass(row.status)}">
+                                    ${row.status || 'N/A'}
+                                </span>
+                            </td>
+                            <td>${row.total_subs || 0}</td>
+                            <td>
+                                <button class="btn btn-sm btn-info view-details" data-service="${row.name}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        `;
+                        servicesTableBody.appendChild(tr);
                     });
+
+                    // Update metrics
+                    document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.failed + data.status_totals.new + data.status_totals.canceled;
+                    document.getElementById('activeServices').textContent = data.status_totals.active;
+                    document.getElementById('inactiveServices').textContent = data.status_totals.failed;
+                    document.getElementById('gracePeriod').textContent = data.status_totals.new;
+                })
+                .catch(error => {
+                    console.error('Error fetching status-wise report:', error);
+                    alert('Error fetching data: ' + error.message);
+                });
             });
 
             // Load initial data

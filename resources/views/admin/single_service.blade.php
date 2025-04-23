@@ -93,11 +93,9 @@
           </div>
         </div>
 
-     
-
         <!-- Key Metrics -->
         <div class="row mb-4">
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="card shadow-sm">
               <div class="card-body">
                 <h6 class="text-muted">Total Subscriptions</h6>
@@ -111,27 +109,13 @@
               </div>
             </div>
           </div>
-          <div class="col-md-4">
+          <div class="col-md-6">
             <div class="card shadow-sm">
               <div class="card-body">
                 <h6 class="text-muted">Active Subscriptions</h6>
                 <h3 id="activeSubscriptions">0</h3>
                 <div class="d-flex align-items-center">
                   <span id="activeChange" class="text-success">
-                    <i class="bi bi-arrow-up"></i> 0%
-                  </span>
-                  <span class="text-muted ms-2">vs previous period</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="card shadow-sm">
-              <div class="card-body">
-                <h6 class="text-muted">Churn Rate</h6>
-                <h3 id="churnRate">0%</h3>
-                <div class="d-flex align-items-center">
-                  <span id="churnChange" class="text-danger">
                     <i class="bi bi-arrow-up"></i> 0%
                   </span>
                   <span class="text-muted ms-2">vs previous period</span>
@@ -170,6 +154,11 @@
                 <div class="text-muted mb-3">
                   <small><i class="bi bi-info-circle"></i> Monthly subscription changes (new and canceled) from subs_in_out_count table</small>
                 </div>
+                <div class="d-flex justify-content-end mb-3">
+                  <button type="button" class="btn btn-success" id="exportBtn">
+                    <i class="bi bi-file-excel"></i> Export to Excel
+                  </button>
+                </div>
                 <div class="table-responsive">
                   <table class="table table-hover" id="detailedTable">
                     <thead>
@@ -192,13 +181,23 @@
                   <div class="text-muted" id="paginationInfo">
                     Showing 0 to 0 of 0 entries
                   </div>
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-outline-secondary" id="prevPage" disabled>
-                      <i class="bi bi-chevron-left"></i> Previous
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary" id="nextPage" disabled>
-                      Next <i class="bi bi-chevron-right"></i>
-                    </button>
+                  <div class="d-flex align-items-center">
+                    <div class="me-3">
+                      <select id="perPageSelect" class="form-select form-select-sm">
+                        <option value="10">10 per page</option>
+                        <option value="25">25 per page</option>
+                        <option value="50">50 per page</option>
+                        <option value="100">100 per page</option>
+                      </select>
+                    </div>
+                    <div class="btn-group">
+                      <button type="button" class="btn btn-outline-secondary" id="prevPage" disabled>
+                        <i class="bi bi-chevron-left"></i> Previous
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary" id="nextPage" disabled>
+                        Next <i class="bi bi-chevron-right"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -217,7 +216,7 @@
         const statusPieChart = new Chart(document.getElementById("statusPieChart"), {
           type: 'pie',
           data: {
-            labels: ['New', 'Canceled'],
+            labels: ['Active', 'Canceled'],
             datasets: [{
               data: [0, 0],
               backgroundColor: ['#28a745', '#dc3545']
@@ -269,6 +268,13 @@
             }
           }
         });
+
+        function exportTableToExcel() {
+          const table = document.querySelector('#detailedTable');
+          const wb = XLSX.utils.table_to_book(table, {sheet: "Subscription Analysis"});
+          const fileName = `subscription_analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+        }
 
         // Handle filter application
         document.getElementById("applyFilters").addEventListener("click", function() {
@@ -342,6 +348,7 @@
               let canceledSubscribers = 0;
               const dates = [];
               const subscriberCounts = [];
+              const previousPeriodCounts = [];
 
               reportData.forEach(row => {
                 const subscribers = parseInt(row.subscribers) || 0;
@@ -356,16 +363,15 @@
                 // For trend chart
                 dates.push(row.start_date);
                 subscriberCounts.push(subscribers);
+                previousPeriodCounts.push(row.previous_period_count || 0);
               });
 
               // Update metrics
               const metrics = {
                 total: totalSubscribers,
                 active: activeSubscribers,
-                churn_rate: totalSubscribers > 0 ? ((canceledSubscribers / totalSubscribers) * 100).toFixed(2) : 0,
-                total_change: 0,
-                active_change: 0,
-                churn_change: 0
+                total_change: calculateChange(totalSubscribers, previousPeriodCounts[0]),
+                active_change: calculateChange(activeSubscribers, previousPeriodCounts[0])
               };
               
               updateMetrics(metrics);
@@ -385,6 +391,7 @@
               // Update trend chart
               subscriptionTrendChart.data.labels = dates;
               subscriptionTrendChart.data.datasets[0].data = subscriberCounts;
+              subscriptionTrendChart.data.datasets[1].data = previousPeriodCounts;
               subscriptionTrendChart.update();
 
               // Update table
@@ -420,15 +427,18 @@
           }
         }
 
+        function calculateChange(current, previous) {
+          if (!previous) return 0;
+          return ((current - previous) / previous) * 100;
+        }
+
         function updateMetrics(metrics) {
           document.getElementById("totalSubscriptions").textContent = metrics.total;
           document.getElementById("activeSubscriptions").textContent = metrics.active;
-          document.getElementById("churnRate").textContent = metrics.churn_rate + '%';
 
           // Update changes
           updateChangeIndicator("subscriptionChange", metrics.total_change);
           updateChangeIndicator("activeChange", metrics.active_change);
-          updateChangeIndicator("churnChange", metrics.churn_change);
         }
 
         function updateChangeIndicator(elementId, change) {
@@ -436,7 +446,7 @@
           const icon = element.querySelector('i');
           element.className = change >= 0 ? 'text-success' : 'text-danger';
           icon.className = change >= 0 ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
-          element.innerHTML = `${icon.outerHTML} ${Math.abs(change)}%`;
+          element.innerHTML = `${icon.outerHTML} ${Math.abs(change).toFixed(2)}%`;
         }
 
         function updateTable(data) {
@@ -468,7 +478,7 @@
 
         function getStatusColor(status) {
           const colors = {
-            'NEW': 'success',
+            'ACTIVE': 'success',
             'CANCELED': 'danger'
           };
           return colors[status] || 'secondary';
@@ -478,7 +488,7 @@
           const color = change >= 0 ? 'success' : 'danger';
           const icon = change >= 0 ? 'arrow-up' : 'arrow-down';
           return `<span class="text-${color}">
-            <i class="bi bi-${icon}"></i> ${Math.abs(change)}%
+            <i class="bi bi-${icon}"></i> ${Math.abs(change).toFixed(2)}%
           </span>`;
         }
 
@@ -487,6 +497,8 @@
           const from = pagination.from || 0;
           const to = pagination.to || 0;
           const total = pagination.total || 0;
+          const currentPage = pagination.current_page || 1;
+          const lastPage = pagination.last_page || 1;
           
           document.getElementById('paginationInfo').textContent = `Showing ${from} to ${to} of ${total} entries`;
           
@@ -495,43 +507,113 @@
           const nextBtn = document.getElementById('nextPage');
           
           if (prevBtn) {
-            prevBtn.disabled = !pagination.prev_page_url;
+            prevBtn.disabled = currentPage <= 1;
             prevBtn.onclick = () => {
-              if (pagination.prev_page_url) {
-                loadPage(pagination.prev_page_url);
+              if (currentPage > 1) {
+                loadPage(currentPage - 1);
               }
             };
           }
           
           if (nextBtn) {
-            nextBtn.disabled = !pagination.next_page_url;
+            nextBtn.disabled = currentPage >= lastPage;
             nextBtn.onclick = () => {
-              if (pagination.next_page_url) {
-                loadPage(pagination.next_page_url);
+              if (currentPage < lastPage) {
+                loadPage(currentPage + 1);
               }
             };
           }
         }
 
         // Add page loading function
-        function loadPage(url) {
-          fetch(url, {
+        function loadPage(page) {
+          const startDate = document.getElementById("startDate").value;
+          const endDate = document.getElementById("endDate").value;
+          
+          if (!startDate || !endDate) {
+            alert('Please select date range first');
+            return;
+          }
+          
+          const filters = {
+            start_date: formatDateForAPI(startDate),
+            end_date: formatDateForAPI(endDate),
+            service_name: document.getElementById("offerSelect").value,
+            status: document.getElementById("statusSelect").value,
+            time_period: document.getElementById("timePeriod").value,
+            compare_period: document.getElementById("comparePeriod").value,
+            page: page,
+            per_page: document.getElementById("perPageSelect").value
+          };
+
+          // Show loading state
+          document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+          // Fetch data from API
+          fetch(`http://127.0.0.1:8000/api/v1/service-report?${new URLSearchParams(filters)}`, {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
             credentials: 'include'
           })
-          .then(response => response.json())
-          .then(data => {
-            // Update table with new data
-            updateTable(data.table_data || []);
-            updatePaginationInfo(data.pagination || {});
-          })
-          .catch(error => {
-            console.error('Error loading page:', error);
-          });
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+            })
+            .then(data => {
+              if (data.error) {
+                throw new Error(data.message || data.error);
+              }
+
+              const reportData = data.table_data || [];
+              const pagination = data.pagination || {};
+              
+              if (!reportData || reportData.length === 0) {
+                document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">No data available for the selected filters</td></tr>';
+                return;
+              }
+
+              // Update table and pagination
+              updateTable(reportData);
+              updatePaginationInfo(pagination);
+            })
+            .catch(error => {
+              console.error('Error loading page:', error);
+              document.getElementById("dataTable").innerHTML = `
+                <tr>
+                  <td colspan="6" class="text-center text-danger">
+                    Error loading data: ${error.message}
+                  </td>
+                </tr>
+              `;
+            });
         }
+
+        // Add event listener for per page select
+        document.getElementById("perPageSelect").addEventListener("change", function() {
+          loadPage(1); // Reset to first page when changing items per page
+        });
+
+        // Add export button click handler
+        document.getElementById('exportBtn').addEventListener('click', function() {
+            const table = document.querySelector('#detailedTable');
+            if (!table) {
+                console.error('Table not found');
+                return;
+            }
+            
+            try {
+                const wb = XLSX.utils.table_to_book(table, {sheet: "Subscription Analysis"});
+                const fileName = `subscription_analysis_${new Date().toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, fileName);
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                alert('Error exporting to Excel. Please try again.');
+            }
+        });
       });
     </script>
   </body>

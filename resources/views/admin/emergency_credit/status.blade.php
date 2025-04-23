@@ -43,22 +43,24 @@
                 <form id="filterForm" class="row g-3">
                   <div class="col-md-3">
                     <label for="start_date" class="form-label">Start Date</label>
-                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ date('Y-m-d', strtotime('-30 days')) }}">
+                    <input type="date" class="form-control" id="start_date" name="start_date" 
+                           value="{{ date('Y-m-d', strtotime('-30 days')) }}">
                   </div>
                   <div class="col-md-3">
                     <label for="end_date" class="form-label">End Date</label>
-                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ date('Y-m-d') }}">
+                    <input type="date" class="form-control" id="end_date" name="end_date" 
+                           value="{{ date('Y-m-d') }}">
                   </div>
-                  <div class="col-md-3">
-                    <label for="credit_type" class="form-label">Credit Type</label>
-                    <select class="form-select" id="credit_type" name="credit_type">
-                      <option value="">All Types</option>
-                      <option value="EMERGENCY">Emergency</option>
-                      <option value="REGULAR">Regular</option>
-                      <option value="SPECIAL">Special</option>
+                  <div class="col-md-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select" id="status" name="status">
+                      <option value="">All Status</option>
+                      @foreach($statuses as $status)
+                        <option value="{{ $status }}">{{ $status }}</option>
+                      @endforeach
                     </select>
                   </div>
-                  <div class="col-md-3 d-flex align-items-end">
+                  <div class="col-md-8 d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary">Apply Filters</button>
                   </div>
                 </form>
@@ -77,7 +79,9 @@
                 <h5>Transaction Status Distribution</h5>
               </div>
               <div class="card-body">
-                <canvas id="statusChart" height="300"></canvas>
+                <div id="chartContainer">
+                  <canvas id="statusChart" height="300"></canvas>
+                </div>
               </div>
             </div>
           </div>
@@ -88,6 +92,9 @@
             <div class="card">
               <div class="card-header">
                 <h5>Status Statistics</h5>
+                <button type="button" class="btn btn-success float-end" id="exportBtn">
+                  <i class="bi bi-file-excel"></i> Export to Excel
+                </button>
               </div>
               <div class="card-body">
                 <div class="table-responsive">
@@ -127,79 +134,158 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
       const filterForm = document.getElementById('filterForm');
+      let statusChart = null;
+      
+      function showLoading() {
+        document.getElementById('statusTable').innerHTML = `
+          <tr>
+            <td colspan="5" class="text-center">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+            </td>
+          </tr>
+        `;
+        document.getElementById('chartContainer').innerHTML = `
+          <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        `;
+      }
+
+      function exportTableToExcel() {
+        const table = document.querySelector('.table');
+        const wb = XLSX.utils.table_to_book(table, {sheet: "Status Statistics"});
+        const fileName = `emergency_credit_status_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+      }
+
+      function parseNumber(value) {
+        if (typeof value === 'string') {
+          return parseInt(value.replace(/,/g, '')) || 0;
+        }
+        return value || 0;
+      }
+
+      function parsePercentage(value) {
+        if (typeof value === 'string') {
+          return parseFloat(value) || 0;
+        }
+        return value || 0;
+      }
+
+      function updateChart(data) {
+        try {
+          const ctx = document.getElementById('statusChart').getContext('2d');
+          
+          // Destroy existing chart if it exists
+          if (statusChart) {
+            statusChart.destroy();
+          }
+
+          const labels = data.map(item => item.status);
+          const counts = data.map(item => parseNumber(item.count));
+          const percentages = data.map(item => parsePercentage(item.percentage));
+
+          statusChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: labels,
+              datasets: [{
+                data: counts,
+                backgroundColor: [
+                  'rgb(75, 192, 192)',
+                  'rgb(255, 99, 132)',
+                  'rgb(54, 162, 235)',
+                  'rgb(255, 205, 86)',
+                  'rgb(153, 102, 255)'
+                ]
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                title: {
+                  display: true,
+                  text: 'Transaction Status Distribution'
+                },
+                tooltip: {
+                  callbacks: {
+                    label: function(context) {
+                      const label = context.label || '';
+                      const value = context.raw || 0;
+                      const percentage = percentages[context.dataIndex] || 0;
+                      return `${label}: ${value.toLocaleString()} (${percentage.toFixed(2)}%)`;
+                    }
+                  }
+                }
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Error updating chart:', error);
+          document.getElementById('chartContainer').innerHTML = `
+            <div class="alert alert-danger">
+              Error updating chart: ${error.message}
+            </div>
+          `;
+        }
+      }
       
       function fetchData(params = {}) {
+        showLoading();
+        
+        console.log('Request parameters:', params);
+        
         const url = new URL('http://127.0.0.1:8000/emergency-credit/status/data');
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
+        console.log('Request URL:', url.toString());
+        
         fetch(url)
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then(data => {
-            // Update status table
+            console.log('Response data:', data);
+            
+            // Update table
             const tbody = document.getElementById('statusTable');
             tbody.innerHTML = '';
             
-            if (data.statusStats.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="5" class="text-center">No status data available</td></tr>';
+            if (!data.statusStats || data.statusStats.length === 0) {
+              const message = data.message || 'No data available for the selected period';
+              tbody.innerHTML = `<tr><td colspan="5" class="text-center">${message}</td></tr>`;
+              document.getElementById('chartContainer').innerHTML = `<div class="alert alert-info">${message}</div>`;
               return;
             }
 
-            const totalCount = data.statusStats.reduce((sum, stat) => sum + stat.count, 0);
-            
             data.statusStats.forEach(stat => {
               const tr = document.createElement('tr');
-              const percentage = ((stat.count / totalCount) * 100).toFixed(2);
               tr.innerHTML = `
-                <td>${stat.status || 'Unknown'}</td>
+                <td>${stat.status}</td>
                 <td>${stat.count}</td>
                 <td>${stat.unique_users}</td>
                 <td>${stat.total_units}</td>
-                <td>${percentage}%</td>
+                <td>${stat.percentage}%</td>
               `;
               tbody.appendChild(tr);
             });
 
             // Update chart
-            const ctx = document.getElementById('statusChart').getContext('2d');
-            const statuses = data.statusStats.map(item => item.status || 'Unknown');
-            const counts = data.statusStats.map(item => item.count);
-            const colors = [
-              'rgba(255, 99, 132, 0.5)',
-              'rgba(54, 162, 235, 0.5)',
-              'rgba(255, 206, 86, 0.5)',
-              'rgba(75, 192, 192, 0.5)',
-              'rgba(153, 102, 255, 0.5)',
-              'rgba(255, 159, 64, 0.5)'
-            ];
-
-            new Chart(ctx, {
-              type: 'pie',
-              data: {
-                labels: statuses,
-                datasets: [{
-                  data: counts,
-                  backgroundColor: colors,
-                  borderColor: colors.map(color => color.replace('0.5', '1')),
-                  borderWidth: 1
-                }]
-              },
-              options: {
-                responsive: true,
-                plugins: {
-                  legend: {
-                    position: 'right',
-                  },
-                  title: {
-                    display: true,
-                    text: 'Transaction Status Distribution'
-                  }
-                }
-              }
-            });
+            document.getElementById('chartContainer').innerHTML = '<canvas id="statusChart" height="300"></canvas>';
+            updateChart(data.statusStats);
           })
           .catch(error => {
             console.error('Error fetching data:', error);
-            document.getElementById('statusTable').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading data</td></tr>';
+            const errorMessage = error.message || 'Error loading data';
+            document.getElementById('statusTable').innerHTML = `<tr><td colspan="5" class="text-center text-danger">${errorMessage}</td></tr>`;
+            document.getElementById('chartContainer').innerHTML = `<div class="alert alert-danger">${errorMessage}</div>`;
           });
       }
 
@@ -215,6 +301,24 @@
           if (value) params[key] = value;
         });
         fetchData(params);
+      });
+
+      // Add export button click handler
+      document.getElementById('exportBtn').addEventListener('click', function() {
+        const table = document.querySelector('.table');
+        if (!table) {
+          console.error('Table not found');
+          return;
+        }
+        
+        try {
+          const wb = XLSX.utils.table_to_book(table, {sheet: "Status Statistics"});
+          const fileName = `emergency_credit_status_${new Date().toISOString().split('T')[0]}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+        } catch (error) {
+          console.error('Error exporting to Excel:', error);
+          alert('Error exporting to Excel. Please try again.');
+        }
       });
     });
     </script>
