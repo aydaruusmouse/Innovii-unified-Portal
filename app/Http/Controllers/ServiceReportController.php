@@ -127,8 +127,9 @@ class ServiceReportController extends Controller
             $endDate = $request->input('end_date');
             $serviceName = $request->input('service_name');
             $status = $request->input('status');
+            $perPage = $request->input('per_page', 10); // Default 10 items per page
 
-            // Base query
+            // Base query for subs_in_out_count
             $query = DB::table('subs_in_out_count')
                 ->whereIn('status', ['ACTIVE', 'CANCELED']);
 
@@ -158,15 +159,41 @@ class ServiceReportController extends Controller
                 DB::raw('SUM(base_count) as total_subs')
             )
             ->groupBy('date', 'name', 'status')
-            ->orderBy('date', 'desc')
-            ->get();
+            ->orderBy('date', 'desc');
+
+            // Get failed status from subscription_base
+            $failedQuery = DB::table('subscription_base')
+                ->select(
+                    DB::raw('DATE(created_at) as date'),
+                    'name',
+                    DB::raw('"FAILED" as status'),
+                    DB::raw('COUNT(*) as total_subs')
+                )
+                ->where('status', 'FAILED')
+                ->when($startDate, function ($query) use ($startDate) {
+                    return $query->whereDate('created_at', '>=', $startDate);
+                })
+                ->when($endDate, function ($query) use ($endDate) {
+                    return $query->whereDate('created_at', '<=', $endDate);
+                })
+                ->when($serviceName && $serviceName !== 'all', function ($query) use ($serviceName) {
+                    return $query->where('name', $serviceName);
+                })
+                ->groupBy('date', 'name', 'status');
+
+            // Union the queries
+            $combinedQuery = $serviceData->union($failedQuery);
+
+            // Get paginated results
+            $paginatedData = $combinedQuery->paginate($perPage);
 
             // Calculate totals for the pie chart
-            $totalActive = $serviceData->where('status', 'ACTIVE')->sum('total_subs');
-            $totalCanceled = $serviceData->where('status', 'CANCELED')->sum('total_subs');
+            $totalActive = $paginatedData->where('status', 'ACTIVE')->sum('total_subs');
+            $totalCanceled = $paginatedData->where('status', 'CANCELED')->sum('total_subs');
+            $totalFailed = $paginatedData->where('status', 'FAILED')->sum('total_subs');
 
             // Prepare table data
-            $tableData = $serviceData->map(function ($item) {
+            $tableData = $paginatedData->map(function ($item) {
                 return [
                     'date' => $item->date,
                     'name' => $item->name,
@@ -178,11 +205,20 @@ class ServiceReportController extends Controller
             return response()->json([
                 'status_totals' => [
                     'active' => $totalActive,
-                    'canceled' => $totalCanceled
+                    'canceled' => $totalCanceled,
+                    'failed' => $totalFailed
                 ],
                 'table_data' => $tableData,
-                'dates' => $serviceData->pluck('date')->unique()->values(),
-                'subscription_totals' => $serviceData->pluck('total_subs')->values()
+                'dates' => $paginatedData->pluck('date')->unique()->values(),
+                'subscription_totals' => $paginatedData->pluck('total_subs')->values(),
+                'pagination' => [
+                    'total' => $paginatedData->total(),
+                    'per_page' => $paginatedData->perPage(),
+                    'current_page' => $paginatedData->currentPage(),
+                    'last_page' => $paginatedData->lastPage(),
+                    'from' => $paginatedData->firstItem(),
+                    'to' => $paginatedData->lastItem()
+                ]
             ]);
 
         } catch (\Exception $e) {
