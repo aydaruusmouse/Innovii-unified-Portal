@@ -20,16 +20,16 @@
   </a>
   <ul class="pc-submenu">
     <li class="pc-item">
-      <a class="pc-link" href="{{ route('all_services') }}" style="font-size: 14px;">All Services</a>
+      <a class="pc-link" href="{{ route('all_services') }}" style="font-size: 14px;">Service Overview</a>
     </li>
     <li class="pc-item">
-      <a href="{{ route('single_service') }}" class="pc-link" style="font-size: 14px;">Subscription Reports</a>
+      <a href="{{ route('single_service') }}" class="pc-link" style="font-size: 14px;">Subscription Analytics</a>
     </li>
     <li class="pc-item">
-      <a href="{{ route('status_services') }}" class="pc-link" style="font-size: 14px;">Subscription Status Reports</a>
+      <a href="{{ route('status_services') }}" class="pc-link" style="font-size: 14px;">Performance Metrics</a>
     </li>
     <li class="pc-item">
-      <a href="#!" class="pc-link" style="font-size: 14px;">Subscribers Insights</a>
+      <a href="#!" class="pc-link" style="font-size: 14px;">Trend Analysis</a>
     </li>
   </ul>
 </li>

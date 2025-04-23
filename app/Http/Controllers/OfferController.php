@@ -133,4 +133,31 @@ class OfferController extends Controller
             ], 500)->withHeaders($headers);
         }
     }
+
+    public function show($id)
+    {
+        try {
+            $offer = DB::table('offers')
+                ->where('id', $id)
+                ->first();
+
+            if (!$offer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Offer not found'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $offer
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch offer details',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

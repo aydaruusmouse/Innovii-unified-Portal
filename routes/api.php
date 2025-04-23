@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 // Offers API routes
 Route::prefix('v1')->group(function () {
     Route::get('/offers', [OfferController::class, 'index']);
+    Route::get('/offers/{id}', [OfferController::class, 'show']);
     Route::get('/service-report', [ServiceReportController::class, 'getServiceReport']);
     Route::get('/status-wise-report', [ServiceReportController::class, 'getStatusWiseReport']);
 });
