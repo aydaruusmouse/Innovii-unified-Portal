@@ -79,6 +79,7 @@
                                         <option value="all">All Status</option>
                                         <option value="ACTIVE">Active</option>
                                         <option value="CANCELED">Canceled</option>
+                                        <option value="FAILED">Failed</option>
                                     </select>
                                 </div>
                             </div>
@@ -196,12 +197,9 @@
             <div class="card mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h6 class="m-0 font-weight-bold text-primary">Services List</h6>
-                    <div class="d-flex align-items-center">
-                        <div class="input-group">
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search services...">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
-                        </div>
-                    </div>
+                    <button type="button" class="btn btn-success" id="exportBtn">
+                        <i class="bi bi-file-excel"></i> Export to Excel
+                    </button>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -288,6 +286,9 @@
             const statusFilter = document.getElementById("statusFilter");
             const applyFiltersBtn = document.getElementById("applyFilters");
             const servicesTableBody = document.getElementById("servicesTableBody");
+            const paginationInfo = document.getElementById("paginationInfo");
+            const paginationLinks = document.getElementById("paginationLinks");
+            let currentPage = 1;
 
             // Set default dates (last 30 days)
             const today = new Date();
@@ -301,10 +302,10 @@
             let statusDistributionChart = new Chart(document.getElementById("statusDistributionChart").getContext("2d"), {
                 type: "pie",
                 data: {
-                    labels: ["Active", "Canceled"],
+                    labels: ["Active", "Canceled", "Failed"],
                     datasets: [{
-                        data: [0, 0],
-                        backgroundColor: ["#28a745", "#dc3545"]
+                        data: [0, 0, 0],
+                        backgroundColor: ["#28a745", "#dc3545", "#ffc107"]
                     }]
                 },
                 options: {
@@ -345,89 +346,188 @@
 
             // Apply Filters
             applyFiltersBtn.addEventListener("click", function () {
+                currentPage = 1;
+                fetchData();
+            });
+
+            // Fetch data with pagination
+            function fetchData(page = 1) {
                 const selectedStartDate = startDate.value;
                 const selectedEndDate = endDate.value;
                 const selectedService = serviceFilter.value;
                 const selectedStatus = statusFilter.value;
 
-                fetch(`/api/v1/status-wise-report?start_date=${selectedStartDate}&end_date=${selectedEndDate}&service_name=${selectedService}&status=${selectedStatus}`, {
-                    headers: {
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        throw new Error(data.message || data.error);
-                    }
+                fetch(`/api/v1/status-wise-report?start_date=${selectedStartDate}&end_date=${selectedEndDate}&service_name=${selectedService}&status=${selectedStatus}&page=${page}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            throw new Error(data.message || data.error);
+                        }
 
-                    // Update Status Chart
-                    statusDistributionChart.data.datasets[0].data = [
-                        data.status_totals.active,
-                        data.status_totals.canceled
-                    ];
-                    statusDistributionChart.update();
+                        // Update Status Chart
+                        statusDistributionChart.data.datasets[0].data = [
+                            data.status_totals.active,
+                            data.status_totals.canceled,
+                            data.status_totals.failed
+                        ];
+                        statusDistributionChart.update();
 
-                    // Update Subscription Chart
-                    subscriptionTrendChart.data.labels = data.dates;
-                    subscriptionTrendChart.data.datasets[0].data = data.subscription_totals;
-                    subscriptionTrendChart.update();
+                        // Update Subscription Chart
+                        subscriptionTrendChart.data.labels = data.dates;
+                        subscriptionTrendChart.data.datasets[0].data = data.subscription_totals;
+                        subscriptionTrendChart.update();
 
-                    // Update Table
-                    servicesTableBody.innerHTML = '';
-                    data.table_data.forEach(row => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${row.date}</td>
-                            <td>${row.name}</td>
-                            <td>
-                                <span class="badge ${getStatusBadgeClass(row.status)}">
-                                    ${row.status || 'N/A'}
-                                </span>
-                            </td>
-                            <td>${row.total_subs || 0}</td>
-                            <td>
-                                <button class="btn btn-sm btn-info view-details" data-service="${row.name}">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </td>
-                        `;
-                        servicesTableBody.appendChild(tr);
+                        // Update Table
+                        servicesTableBody.innerHTML = '';
+                        data.table_data.forEach(row => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${row.date}</td>
+                                <td>${row.name}</td>
+                                <td>
+                                    <span class="badge ${getStatusBadgeClass(row.status)}">
+                                        ${row.status || 'N/A'}
+                                    </span>
+                                </td>
+                                <td>${row.total_subs || 0}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-info view-details" data-service="${row.name}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            `;
+                            servicesTableBody.appendChild(tr);
+                        });
+
+                        // Update metrics
+                        document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.canceled + data.status_totals.failed;
+                        document.getElementById('activeServices').textContent = data.status_totals.active;
+                        document.getElementById('inactiveServices').textContent = data.status_totals.canceled;
+                        document.getElementById('gracePeriod').textContent = data.status_totals.failed;
+
+                        // Update pagination
+                        updatePagination(data.pagination);
+                    })
+                    .catch(error => {
+                        console.error('Error fetching status-wise report:', error);
+                        alert('Error fetching data: ' + error.message);
                     });
+            }
 
-                    // Update metrics
-                    document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.canceled;
-                    document.getElementById('activeServices').textContent = data.status_totals.active;
-                    document.getElementById('inactiveServices').textContent = data.status_totals.canceled;
-                    document.getElementById('gracePeriod').textContent = data.status_totals.new;
-                })
-                .catch(error => {
-                    console.error('Error fetching status-wise report:', error);
-                    alert('Error fetching data: ' + error.message);
+            // Update pagination
+            function updatePagination(pagination) {
+                paginationInfo.textContent = `Showing ${pagination.from} to ${pagination.to} of ${pagination.total} entries`;
+                
+                paginationLinks.innerHTML = '';
+                
+                // Previous button
+                const prevLi = document.createElement('li');
+                prevLi.className = `page-item ${pagination.current_page === 1 ? 'disabled' : ''}`;
+                prevLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page - 1}">Previous</a>`;
+                paginationLinks.appendChild(prevLi);
+
+                // Calculate range of pages to show
+                const maxPages = 5; // Maximum number of page numbers to show
+                let startPage = Math.max(1, pagination.current_page - Math.floor(maxPages / 2));
+                let endPage = Math.min(pagination.last_page, startPage + maxPages - 1);
+
+                // Adjust start page if we're near the end
+                if (endPage - startPage + 1 < maxPages) {
+                    startPage = Math.max(1, endPage - maxPages + 1);
+                }
+
+                // First page and ellipsis
+                if (startPage > 1) {
+                    const firstLi = document.createElement('li');
+                    firstLi.className = 'page-item';
+                    firstLi.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
+                    paginationLinks.appendChild(firstLi);
+
+                    if (startPage > 2) {
+                        const ellipsisLi = document.createElement('li');
+                        ellipsisLi.className = 'page-item disabled';
+                        ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                        paginationLinks.appendChild(ellipsisLi);
+                    }
+                }
+
+                // Page numbers
+                for (let i = startPage; i <= endPage; i++) {
+                    const li = document.createElement('li');
+                    li.className = `page-item ${i === pagination.current_page ? 'active' : ''}`;
+                    li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
+                    paginationLinks.appendChild(li);
+                }
+
+                // Last page and ellipsis
+                if (endPage < pagination.last_page) {
+                    if (endPage < pagination.last_page - 1) {
+                        const ellipsisLi = document.createElement('li');
+                        ellipsisLi.className = 'page-item disabled';
+                        ellipsisLi.innerHTML = '<span class="page-link">...</span>';
+                        paginationLinks.appendChild(ellipsisLi);
+                    }
+
+                    const lastLi = document.createElement('li');
+                    lastLi.className = 'page-item';
+                    lastLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a>`;
+                    paginationLinks.appendChild(lastLi);
+                }
+
+                // Next button
+                const nextLi = document.createElement('li');
+                nextLi.className = `page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}`;
+                nextLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page + 1}">Next</a>`;
+                paginationLinks.appendChild(nextLi);
+
+                // Add click event listeners
+                paginationLinks.querySelectorAll('.page-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const page = parseInt(this.dataset.page);
+                        if (page && page !== pagination.current_page) {
+                            currentPage = page;
+                            fetchData(page);
+                        }
+                    });
                 });
+            }
+
+            // Export to Excel
+            document.getElementById('exportBtn').addEventListener('click', function() {
+                const table = document.querySelector('.table');
+                if (!table) {
+                    console.error('Table not found');
+                    return;
+                }
+                
+                try {
+                    const wb = XLSX.utils.table_to_book(table, {sheet: "Services Status"});
+                    const fileName = `services_status_${new Date().toISOString().split('T')[0]}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                } catch (error) {
+                    console.error('Error exporting to Excel:', error);
+                    alert('Error exporting to Excel. Please try again.');
+                }
             });
 
-            // Load initial data
-            applyFiltersBtn.click();
-        });
-
-        // Helper function for status badge classes
-        function getStatusBadgeClass(status) {
-            switch(status) {
-                case 'ACTIVE':
-                    return 'bg-success';
-                case 'CANCELED':
-                    return 'bg-danger';
-                default:
-                    return 'bg-secondary';
+            // Helper function for status badge classes
+            function getStatusBadgeClass(status) {
+                switch(status) {
+                    case 'ACTIVE':
+                        return 'bg-success';
+                    case 'CANCELED':
+                        return 'bg-danger';
+                    case 'FAILED':
+                        return 'bg-warning';
+                    default:
+                        return 'bg-secondary';
+                }
             }
-        }
+
+            // Load initial data
+            fetchData();
+        });
     </script>
   </body>
 </html>

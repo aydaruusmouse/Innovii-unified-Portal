@@ -30,7 +30,10 @@
       <a href="{{ route('status_wise_services') }}" class="pc-link" style="font-size: 14px;">Status Wise Services</a>
     </li>
     <li class="pc-item">
-      <a href="#!" class="pc-link" style="font-size: 14px;">Trend Analysis</a>
+      <a href="{{ route('status_analysis') }}" class="pc-link" style="font-size: 14px;">Status Analysis</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('overall_subscriber_report') }}" class="pc-link" style="font-size: 14px;">Overall Subscription Status</a>
     </li>
   </ul>
 </li>

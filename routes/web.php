@@ -5,6 +5,7 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\SingleServiceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\EmergencyCreditController;
+use App\Http\Controllers\DashboardController;
 // use App\Http\Controllers\OfferController;
 
 Route::prefix('admin1')->name('admin.')->group(function() {
@@ -15,9 +16,7 @@ Route::prefix('admin1')->name('admin.')->group(function() {
     Route::post('/register', [AuthController::class, 'register']);
    
      // Admin Dashboard Route
-     Route::get('/admin', function () {
-        return view('admin.index');
-    })->name('dashboard');
+     Route::get('/admin', [DashboardController::class, 'index'])->name('dashboard');
 });
 
 Route::get('/', function () {
@@ -25,9 +24,7 @@ Route::get('/', function () {
 });
 
 // Add dashboard route
-Route::get('/dashboard', function () {
-    return view('admin.index');
-})->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::get('/all-services', function () {
     return view('admin.all_services');
@@ -35,9 +32,14 @@ Route::get('/all-services', function () {
 
 Route::get('/single-service', [ServiceReportController::class, 'index'])->name('single_service');
 Route::get('/status-wise-services', [ServiceReportController::class, 'statusWiseServices'])->name('status_wise_services');
+Route::get('/status-analysis', [ServiceReportController::class, 'statusAnalysis'])->name('status_analysis');
+Route::get('/overall-subscriber-report', [ServiceReportController::class, 'overallSubscriberReport'])->name('overall_subscriber_report');
+Route::get('/api/v1/status-analysis', [ServiceReportController::class, 'getStatusAnalysisData']);
+Route::get('/api/v1/overall-subscriber-report', [ServiceReportController::class, 'getOverallSubscriberReport']);
 Route::get('/status-insight', function () {
     return view('admin.subscription_insight');
 })->name('subscription_insight');
+Route::get('/overall-subscriber-report', [ServiceReportController::class, 'overallSubscriberReport'])->name('overall_subscriber_report');
 // // web.php (or routes file)
 
 // Route::prefix('admin1')->name('admin.')->group(function() {
