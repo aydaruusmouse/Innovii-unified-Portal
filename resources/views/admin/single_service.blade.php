@@ -29,7 +29,7 @@
                   <h5 class="m-b-10">Subscription Analytics</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                   <li class="breadcrumb-item">SDF Reports</li>
                   <li class="breadcrumb-item">Subscription Analytics</li>
                 </ul>
@@ -99,6 +99,7 @@
             <div class="card shadow-sm">
               <div class="card-body">
                 <h6 class="text-muted">Total Subscriptions</h6>
+                <small class="text-muted">(Active + Canceled)</small>
                 <h3 id="totalSubscriptions">0</h3>
                 <div class="d-flex align-items-center">
                   <span id="subscriptionChange" class="text-success">
@@ -112,7 +113,8 @@
           <div class="col-md-6">
             <div class="card shadow-sm">
               <div class="card-body">
-                <h6 class="text-muted">Active Subscriptions</h6>
+                <h6 class="text-muted">Active/New Subscriptions</h6>
+                <small class="text-muted">(New Active Subscribers)</small>
                 <h3 id="activeSubscriptions">0</h3>
                 <div class="d-flex align-items-center">
                   <span id="activeChange" class="text-success">
@@ -167,8 +169,6 @@
                         <th>Offer</th>
                         <th>Status</th>
                         <th>Subscribers</th>
-                        <th>Change</th>
-                        <th>Actions</th>
                       </tr>
                     </thead>
                     <tbody id="dataTable">
@@ -280,6 +280,8 @@
         document.getElementById("applyFilters").addEventListener("click", function() {
           const startDate = document.getElementById("startDate").value;
           const endDate = document.getElementById("endDate").value;
+          const timePeriod = document.getElementById("timePeriod").value;
+          const comparePeriod = document.getElementById("comparePeriod").value;
           
           // Validate dates
           if (!startDate) {
@@ -291,22 +293,59 @@
             alert('Please select an end date');
             return;
           }
+
+          // Calculate comparison dates based on selected period
+          let compareStartDate = '';
+          let compareEndDate = '';
           
-          console.log('Raw dates:', { startDate, endDate });
+          if (comparePeriod !== 'none') {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (comparePeriod === 'previous') {
+              // Previous period (same duration before the selected period)
+              compareStartDate = new Date(start);
+              compareStartDate.setDate(start.getDate() - diffDays - 1);
+              compareEndDate = new Date(start);
+              compareEndDate.setDate(start.getDate() - 1);
+            } else if (comparePeriod === 'last_year') {
+              // Same period last year
+              compareStartDate = new Date(start);
+              compareStartDate.setFullYear(start.getFullYear() - 1);
+              compareEndDate = new Date(end);
+              compareEndDate.setFullYear(end.getFullYear() - 1);
+            }
+            
+            compareStartDate = compareStartDate.toISOString().split('T')[0];
+            compareEndDate = compareEndDate.toISOString().split('T')[0];
+          }
+          
+          console.log('Raw dates:', { 
+            startDate, 
+            endDate, 
+            compareStartDate, 
+            compareEndDate,
+            timePeriod,
+            comparePeriod 
+          });
           
           const filters = {
             start_date: formatDateForAPI(startDate),
             end_date: formatDateForAPI(endDate),
             service_name: document.getElementById("offerSelect").value,
             status: document.getElementById("statusSelect").value,
-            time_period: document.getElementById("timePeriod").value,
-            compare_period: document.getElementById("comparePeriod").value
+            time_period: timePeriod,
+            compare_period: comparePeriod,
+            compare_start_date: compareStartDate,
+            compare_end_date: compareEndDate
           };
 
           console.log('Formatted filters:', filters);
 
           // Show loading state
-          document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+          document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
           // Fetch data from API
           fetch(`http://127.0.0.1:8000/api/v1/service-report?${new URLSearchParams(filters)}`, {
@@ -332,46 +371,81 @@
 
               // Ensure data is an array
               const reportData = data.table_data || [];
+              const comparisonData = data.comparison_data || [];
               const pagination = data.pagination || {};
               
               if (!reportData || reportData.length === 0) {
-                document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">No data available for the selected filters</td></tr>';
+                document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">No data available for the selected filters</td></tr>';
                 return;
               }
 
               // Get the selected status
               const selectedStatus = document.getElementById("statusSelect").value;
 
-              // Calculate metrics based on the table data
+              // Calculate metrics based on all dates' data
               let totalSubscribers = 0;
               let activeSubscribers = 0;
               let canceledSubscribers = 0;
+              let previousTotal = 0;
+              let previousActive = 0;
               const dates = [];
               const subscriberCounts = [];
               const previousPeriodCounts = [];
 
-              reportData.forEach(row => {
+              // Sort data by date (descending) to get latest first
+              const sortedData = [...reportData].sort((a, b) => 
+                new Date(b.start_date) - new Date(a.start_date)
+              );
+
+              // Get unique dates
+              const uniqueDates = [...new Set(sortedData.map(row => row.start_date))];
+              
+              // Calculate totals from all dates
+              sortedData.forEach(row => {
                 const subscribers = parseInt(row.subscribers) || 0;
-                totalSubscribers += subscribers;
-                
                 if (row.status === 'ACTIVE') {
                   activeSubscribers += subscribers;
                 } else if (row.status === 'CANCELED') {
                   canceledSubscribers += subscribers;
                 }
+              });
 
-                // For trend chart
-                dates.push(row.start_date);
-                subscriberCounts.push(subscribers);
-                previousPeriodCounts.push(row.previous_period_count || 0);
+              // Total is the sum of active and canceled subscribers
+              totalSubscribers = activeSubscribers + canceledSubscribers;
+
+              // Calculate previous period totals if comparison data exists
+              if (comparisonData && comparisonData.length > 0) {
+                comparisonData.forEach(row => {
+                  const subscribers = parseInt(row.subscribers) || 0;
+                  if (row.status === 'ACTIVE') {
+                    previousActive += subscribers;
+                  }
+                  previousTotal += subscribers;
+                });
+              }
+
+              // For trend chart data
+              uniqueDates.forEach(date => {
+                const dateData = sortedData.filter(row => row.start_date === date);
+                const totalForDate = dateData.reduce((sum, row) => sum + (parseInt(row.subscribers) || 0), 0);
+                
+                dates.push(date);
+                subscriberCounts.push(totalForDate);
+                
+                // Get comparison data for this date if available
+                const comparisonDateData = comparisonData ? 
+                  comparisonData.filter(row => row.start_date === date) : [];
+                const comparisonTotal = comparisonDateData.reduce((sum, row) => 
+                  sum + (parseInt(row.subscribers) || 0), 0);
+                previousPeriodCounts.push(comparisonTotal);
               });
 
               // Update metrics
               const metrics = {
                 total: totalSubscribers,
                 active: activeSubscribers,
-                total_change: calculateChange(totalSubscribers, previousPeriodCounts[0]),
-                active_change: calculateChange(activeSubscribers, previousPeriodCounts[0])
+                total_change: calculateChange(totalSubscribers, previousTotal),
+                active_change: calculateChange(activeSubscribers, previousActive)
               };
               
               updateMetrics(metrics);
@@ -404,7 +478,7 @@
               console.error('Error details:', error);
               document.getElementById("dataTable").innerHTML = `
                 <tr>
-                  <td colspan="6" class="text-center text-danger">
+                  <td colspan="4" class="text-center text-danger">
                     Error loading data: ${error.message}
                   </td>
                 </tr>
@@ -454,7 +528,7 @@
           tbody.innerHTML = '';
 
           if (!data || data.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data available</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">No data available</td></tr>';
             return;
           }
 
@@ -465,12 +539,6 @@
               <td>${row.offer || 'N/A'}</td>
               <td><span class="badge bg-${getStatusColor(row.status)}">${row.status || 'N/A'}</span></td>
               <td>${row.subscribers || 0}</td>
-              <td>${formatChange(row.change || 0)}</td>
-              <td>
-                <button class="btn btn-sm btn-info" onclick="viewDetails(${row.id || 0})">
-                  <i class="bi bi-eye"></i>
-                </button>
-              </td>
             `;
             tbody.appendChild(tr);
           });
@@ -482,14 +550,6 @@
             'CANCELED': 'danger'
           };
           return colors[status] || 'secondary';
-        }
-
-        function formatChange(change) {
-          const color = change >= 0 ? 'success' : 'danger';
-          const icon = change >= 0 ? 'arrow-up' : 'arrow-down';
-          return `<span class="text-${color}">
-            <i class="bi bi-${icon}"></i> ${Math.abs(change).toFixed(2)}%
-          </span>`;
         }
 
         // Add pagination info update function
@@ -547,7 +607,7 @@
           };
 
           // Show loading state
-          document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+          document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
           // Fetch data from API
           fetch(`http://127.0.0.1:8000/api/v1/service-report?${new URLSearchParams(filters)}`, {
@@ -572,7 +632,7 @@
               const pagination = data.pagination || {};
               
               if (!reportData || reportData.length === 0) {
-                document.getElementById("dataTable").innerHTML = '<tr><td colspan="6" class="text-center">No data available for the selected filters</td></tr>';
+                document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">No data available for the selected filters</td></tr>';
                 return;
               }
 
@@ -584,7 +644,7 @@
               console.error('Error loading page:', error);
               document.getElementById("dataTable").innerHTML = `
                 <tr>
-                  <td colspan="6" class="text-center text-danger">
+                  <td colspan="4" class="text-center text-danger">
                     Error loading data: ${error.message}
                   </td>
                 </tr>

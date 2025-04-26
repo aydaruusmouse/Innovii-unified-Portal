@@ -25,7 +25,7 @@
                   <h5 class="m-b-10">Emergency Credit Monthly Report</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                   <li class="breadcrumb-item">Emergency Credit</li>
                   <li class="breadcrumb-item">Monthly Report</li>
                 </ul>
@@ -51,7 +51,7 @@
                     <input type="month" class="form-control" id="end_month" name="end_month" 
                            value="{{ date('Y-m') }}">
                   </div>
-                  <div class="col-md-3">
+                  <!-- <div class="col-md-3">
                     <label for="status" class="form-label">Status</label>
                     <select class="form-select" id="status" name="status">
                       <option value="">All Status</option>
@@ -59,7 +59,7 @@
                       <option value="FAILED">Failed</option>
                       <option value="PENDING">Pending</option>
                     </select>
-                  </div>
+                  </div> -->
                   <div class="col-md-3 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Apply Filters</button>
                   </div>
@@ -105,7 +105,6 @@
                         <th>Total Transactions</th>
                         <th>Unique Users</th>
                         <th>Total Units</th>
-                        <th>Success Rate</th>
                       </tr>
                     </thead>
                     <tbody id="monthlyTable">
@@ -167,7 +166,6 @@
         const uniqueUsers = data.map(item => item.unique_users);
         const totalTransactions = data.map(item => item.total_transactions);
         const totalUnits = data.map(item => item.total_units);
-        const successRate = data.map(item => item.success_rate);
 
         monthlyChart = new Chart(ctx, {
           type: 'line',
@@ -190,12 +188,6 @@
                 label: 'Total Units',
                 data: totalUnits,
                 borderColor: 'rgb(54, 162, 235)',
-                tension: 0.1
-              },
-              {
-                label: 'Success Rate (%)',
-                data: successRate,
-                borderColor: 'rgb(153, 102, 255)',
                 tension: 0.1
               }
             ]
@@ -261,7 +253,6 @@
                 <td>${stat.total_transactions}</td>
                 <td>${stat.unique_users}</td>
                 <td>${stat.total_units}</td>
-                <td>${stat.success_rate}%</td>
               `;
               tbody.appendChild(tr);
             });

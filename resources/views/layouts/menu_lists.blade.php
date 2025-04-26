@@ -1,6 +1,5 @@
-
 <li class="pc-item">
-  <a href="../dashboard/index.html" class="pc-link">
+  <a href="/admin1" class="pc-link">
     <span class="pc-micon">
       <i data-feather="home"></i>
     </span>
@@ -24,14 +23,12 @@
       <a class="pc-link" href="{{ route('all_services') }}" style="font-size: 14px;">Service Overview</a>
     </li>
     <li class="pc-item">
-      <a href="{{ route('single_service') }}" class="pc-link" style="font-size: 14px;">Subscription Analytics</a>
+      <a href="{{ route('single_service') }}" class="pc-link" style="font-size: 14px;">New Subscribers Analytics</a>
     </li>
     <li class="pc-item">
-      <a href="{{ route('status_wise_services') }}" class="pc-link" style="font-size: 14px;">Status Wise Services</a>
+      <a href="{{ route('status_wise_services') }}" class="pc-link" style="font-size: 14px;">Detailed report by status</a>
     </li>
-    <li class="pc-item">
-      <a href="{{ route('status_analysis') }}" class="pc-link" style="font-size: 14px;">Status Analysis</a>
-    </li>
+   
     <li class="pc-item">
       <a href="{{ route('overall_subscriber_report') }}" class="pc-link" style="font-size: 14px;">Overall Subscription Status</a>
     </li>

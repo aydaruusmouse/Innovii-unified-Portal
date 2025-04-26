@@ -87,7 +87,7 @@ class OfferController extends Controller
                       'offers.name', '=', 'sb.name')
                 ->where('offers.status', 'ACTIVE')
                 ->orderBy('sb.base_count', 'desc')
-                ->take(3)
+                ->take(6)
                 ->get()
                 ->map(function ($offer) {
                     return [

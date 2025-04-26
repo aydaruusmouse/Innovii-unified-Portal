@@ -22,11 +22,11 @@
         <div class="container-fluid">
             <!-- Page Header -->
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="h3 mb-0 text-gray-800">Status Wise Services</h1>
+                <h1 class="h3 mb-0 text-gray-800">Service Status Report</h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
                         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
-                        <li class="breadcrumb-item active" aria-current="page">Status Wise Services</li>
+                        <li class="breadcrumb-item active" aria-current="page">Service Status Report</li>
                     </ol>
                 </nav>
             </div>
@@ -34,7 +34,7 @@
             <!-- Filter Section -->
             <div class="card mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Report Filters</h6>
                 </div>
                 <div class="card-body">
                     <div class="row">
@@ -79,7 +79,6 @@
                                         <option value="all">All Status</option>
                                         <option value="ACTIVE">Active</option>
                                         <option value="CANCELED">Canceled</option>
-                                        <option value="FAILED">Failed</option>
                                     </select>
                                 </div>
                             </div>
@@ -95,108 +94,10 @@
                 </div>
             </div>
 
-            <!-- Status Overview Cards -->
-            <div class="row mb-4">
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-primary h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Total Services</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="totalServices">0</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-list fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-success h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Active Services</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeServices">0</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-check-circle fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-warning h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        Inactive Services</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="inactiveServices">0</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-exclamation-circle fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3 col-md-6 mb-4">
-                    <div class="card border-left-info h-100 py-2">
-                        <div class="card-body">
-                            <div class="row no-gutters align-items-center">
-                                <div class="col mr-2">
-                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Grace Period</div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800" id="gracePeriod">0</div>
-                                </div>
-                                <div class="col-auto">
-                                    <i class="fas fa-clock fa-2x text-gray-300"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Charts Row -->
-            <div class="row mb-4">
-                <!-- Status Distribution Chart -->
-                <div class="col-xl-6">
-                    <div class="card mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Status Distribution</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-pie pt-4">
-                                <canvas id="statusDistributionChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Subscription Trend Chart -->
-                <div class="col-xl-6">
-                    <div class="card mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Subscription Trend</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="chart-area">
-                                <canvas id="subscriptionTrendChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Services Table -->
             <div class="card mb-4">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold text-primary">Services List</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Service Status Details</h6>
                     <button type="button" class="btn btn-success" id="exportBtn">
                         <i class="bi bi-file-excel"></i> Export to Excel
                     </button>
@@ -210,7 +111,6 @@
                                     <th>Service Name</th>
                                     <th>Status</th>
                                     <th>Subscribers</th>
-                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="servicesTableBody">
@@ -231,60 +131,13 @@
     @include('layouts.footer') 
     @include('layouts.footer_js')
 
-    <!-- Service Details Modal -->
-    <div class="modal fade" id="serviceDetailsModal" tabindex="-1" aria-labelledby="serviceDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="serviceDetailsModalLabel">Service Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Service Name:</label>
-                                <p id="modalServiceName" class="mb-0">-</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Status:</label>
-                                <p id="modalStatus" class="mb-0">-</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Short Code:</label>
-                                <p id="modalShortCode" class="mb-0">-</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">App ID:</label>
-                                <p id="modalAppId" class="mb-0">-</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Validity:</label>
-                                <p id="modalValidity" class="mb-0">-</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Message:</label>
-                                <p id="modalMessage" class="mb-0">-</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const startDate = document.getElementById("startDate");
             const endDate = document.getElementById("endDate");
             const serviceFilter = document.getElementById("serviceFilter");
             const statusFilter = document.getElementById("statusFilter");
-            const applyFiltersBtn = document.getElementById("applyFilters");
+            const applyFilters = document.getElementById("applyFilters");
             const servicesTableBody = document.getElementById("servicesTableBody");
             const paginationInfo = document.getElementById("paginationInfo");
             const paginationLinks = document.getElementById("paginationLinks");
@@ -298,54 +151,8 @@
             startDate.value = thirtyDaysAgo.toISOString().split('T')[0];
             endDate.value = today.toISOString().split('T')[0];
 
-            // Chart instances
-            let statusDistributionChart = new Chart(document.getElementById("statusDistributionChart").getContext("2d"), {
-                type: "pie",
-                data: {
-                    labels: ["Active", "Canceled", "Failed"],
-                    datasets: [{
-                        data: [0, 0, 0],
-                        backgroundColor: ["#28a745", "#dc3545", "#ffc107"]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
-
-            let subscriptionTrendChart = new Chart(document.getElementById("subscriptionTrendChart").getContext("2d"), {
-                type: "line",
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: "Total Subscriptions",
-                        data: [],
-                        borderColor: "#007bff",
-                        fill: false
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        }
-                    }
-                }
-            });
-
             // Apply Filters
-            applyFiltersBtn.addEventListener("click", function () {
+            applyFilters.addEventListener("click", function () {
                 currentPage = 1;
                 fetchData();
             });
@@ -364,19 +171,6 @@
                             throw new Error(data.message || data.error);
                         }
 
-                        // Update Status Chart
-                        statusDistributionChart.data.datasets[0].data = [
-                            data.status_totals.active,
-                            data.status_totals.canceled,
-                            data.status_totals.failed
-                        ];
-                        statusDistributionChart.update();
-
-                        // Update Subscription Chart
-                        subscriptionTrendChart.data.labels = data.dates;
-                        subscriptionTrendChart.data.datasets[0].data = data.subscription_totals;
-                        subscriptionTrendChart.update();
-
                         // Update Table
                         servicesTableBody.innerHTML = '';
                         data.table_data.forEach(row => {
@@ -390,20 +184,9 @@
                                     </span>
                                 </td>
                                 <td>${row.total_subs || 0}</td>
-                                <td>
-                                    <button class="btn btn-sm btn-info view-details" data-service="${row.name}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                </td>
                             `;
                             servicesTableBody.appendChild(tr);
                         });
-
-                        // Update metrics
-                        document.getElementById('totalServices').textContent = data.status_totals.active + data.status_totals.canceled + data.status_totals.failed;
-                        document.getElementById('activeServices').textContent = data.status_totals.active;
-                        document.getElementById('inactiveServices').textContent = data.status_totals.canceled;
-                        document.getElementById('gracePeriod').textContent = data.status_totals.failed;
 
                         // Update pagination
                         updatePagination(data.pagination);
@@ -423,61 +206,52 @@
                 // Previous button
                 const prevLi = document.createElement('li');
                 prevLi.className = `page-item ${pagination.current_page === 1 ? 'disabled' : ''}`;
-                prevLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page - 1}">Previous</a>`;
+                prevLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page - 1}">«</a>`;
                 paginationLinks.appendChild(prevLi);
 
-                // Calculate range of pages to show
-                const maxPages = 5; // Maximum number of page numbers to show
-                let startPage = Math.max(1, pagination.current_page - Math.floor(maxPages / 2));
-                let endPage = Math.min(pagination.last_page, startPage + maxPages - 1);
+                // Calculate page range
+                let startPage = Math.max(1, pagination.current_page - 2);
+                let endPage = Math.min(pagination.last_page, pagination.current_page + 2);
 
-                // Adjust start page if we're near the end
-                if (endPage - startPage + 1 < maxPages) {
-                    startPage = Math.max(1, endPage - maxPages + 1);
+                // Adjust range if at the edges
+                if (pagination.current_page <= 3) {
+                    endPage = Math.min(5, pagination.last_page);
+                }
+                if (pagination.current_page >= pagination.last_page - 2) {
+                    startPage = Math.max(1, pagination.last_page - 4);
                 }
 
-                // First page and ellipsis
+                // First page and ellipsis if needed
                 if (startPage > 1) {
-                    const firstLi = document.createElement('li');
-                    firstLi.className = 'page-item';
-                    firstLi.innerHTML = `<a class="page-link" href="#" data-page="1">1</a>`;
-                    paginationLinks.appendChild(firstLi);
-
+                    paginationLinks.appendChild(createPageItem(1));
                     if (startPage > 2) {
-                        const ellipsisLi = document.createElement('li');
-                        ellipsisLi.className = 'page-item disabled';
-                        ellipsisLi.innerHTML = '<span class="page-link">...</span>';
-                        paginationLinks.appendChild(ellipsisLi);
+                        const ellipsis = document.createElement('li');
+                        ellipsis.className = 'page-item disabled';
+                        ellipsis.innerHTML = '<span class="page-link">...</span>';
+                        paginationLinks.appendChild(ellipsis);
                     }
                 }
 
                 // Page numbers
                 for (let i = startPage; i <= endPage; i++) {
-                    const li = document.createElement('li');
-                    li.className = `page-item ${i === pagination.current_page ? 'active' : ''}`;
-                    li.innerHTML = `<a class="page-link" href="#" data-page="${i}">${i}</a>`;
-                    paginationLinks.appendChild(li);
+                    paginationLinks.appendChild(createPageItem(i, i === pagination.current_page));
                 }
 
-                // Last page and ellipsis
+                // Last page and ellipsis if needed
                 if (endPage < pagination.last_page) {
                     if (endPage < pagination.last_page - 1) {
-                        const ellipsisLi = document.createElement('li');
-                        ellipsisLi.className = 'page-item disabled';
-                        ellipsisLi.innerHTML = '<span class="page-link">...</span>';
-                        paginationLinks.appendChild(ellipsisLi);
+                        const ellipsis = document.createElement('li');
+                        ellipsis.className = 'page-item disabled';
+                        ellipsis.innerHTML = '<span class="page-link">...</span>';
+                        paginationLinks.appendChild(ellipsis);
                     }
-
-                    const lastLi = document.createElement('li');
-                    lastLi.className = 'page-item';
-                    lastLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.last_page}">${pagination.last_page}</a>`;
-                    paginationLinks.appendChild(lastLi);
+                    paginationLinks.appendChild(createPageItem(pagination.last_page));
                 }
 
                 // Next button
                 const nextLi = document.createElement('li');
                 nextLi.className = `page-item ${pagination.current_page === pagination.last_page ? 'disabled' : ''}`;
-                nextLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page + 1}">Next</a>`;
+                nextLi.innerHTML = `<a class="page-link" href="#" data-page="${pagination.current_page + 1}">»</a>`;
                 paginationLinks.appendChild(nextLi);
 
                 // Add click event listeners
@@ -491,6 +265,14 @@
                         }
                     });
                 });
+            }
+
+            // Helper function to create page items
+            function createPageItem(pageNumber, isActive = false) {
+                const li = document.createElement('li');
+                li.className = `page-item ${isActive ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#" data-page="${pageNumber}">${pageNumber}</a>`;
+                return li;
             }
 
             // Export to Excel

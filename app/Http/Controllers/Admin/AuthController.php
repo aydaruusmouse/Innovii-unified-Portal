@@ -25,12 +25,12 @@ class AuthController extends Controller
 
         Log::info('Incoming Request', $request->all());
 
-
         // Validate input
         try {
             $validatedData = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
+                'username' => 'required|string|max:255|unique:users',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|confirmed|min:8',
             ]);
@@ -39,19 +39,20 @@ class AuthController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
         
-
         // Combine first and last name
         $name = "{$request->first_name} {$request->last_name}";
 
         Log::info('User registration data', [
             'name' => $name,
-            'email' => $request->email
+            'email' => $request->email,
+            'username' => $request->username
         ]);
 
         // Create user with hashed password
         try {
             $user = User::create([
                 'name' => $name,
+                'username' => $request->username,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
@@ -67,8 +68,8 @@ class AuthController extends Controller
 
         Log::info('User logged in', ['user_id' => $user->id]);
 
-        // Redirect to the admin dashboard
-    return redirect()->route('admin.dashboard');
+        // Redirect to the admin1 home page
+        return redirect('/admin1/');
     }
     
     
@@ -78,19 +79,18 @@ public function login(Request $request)
 {
     // Validate the input data
     $credentials = $request->validate([
-        'email' => 'required|email',
+        'username' => 'required|string',
         'password' => 'required',
     ]);
 
     // Attempt to log in
-    if (Auth::attempt($credentials, $request->remember)) {
+    if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']], $request->remember)) {
         // Authentication was successful
-           // Redirect to the admin dashboard
-    return redirect()->route('admin.dashboard'); 
+        return redirect('/admin1/'); 
     }
 
     // Authentication failed
-    return back()->withErrors(['email' => 'Invalid email or password']);
+    return back()->withErrors(['username' => 'Invalid username or password']);
 }
 
     public function logout()

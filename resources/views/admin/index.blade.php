@@ -5,6 +5,10 @@
   <head>
     @include('layouts.heads_page')
     @include('layouts.heads_css')
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ApexCharts -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     {{-- @@include('../layouts/head-page-meta.html', {'title': 'Home'}) @@include('../layouts/head-css.html') --}}
   </head>
   <!-- [Head] end -->
@@ -16,6 +20,9 @@
     <!-- [ Main Content ] start -->
     <div class="pc-container">
       <div class="pc-content">
+
+
+      
         {{-- @@include('../layouts/breadcrumb.html', {'breadcrumb-item': 'Dashboard', 'breadcrumb-item-active': 'Home'}) --}}
         <!-- [ Main Content ] start -->
         <div class="row">
@@ -24,494 +31,191 @@
                   <div class="row align-items-center">
                     <div class="col-md-12">
                       <div class="page-header-title">
-                        <h5 class="mb-0">Home</h5>
+                        <h5 class="mb-0">Dashboard Overview</h5>
                       </div>
                     </div>
                     <div class="col-md-12">
                       <ul class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="../dashboard/index.html">Home</a></li>
-                        <li class="breadcrumb-item"><a href="javascript: void(0)">Dashboard</a></li>
-                        <li class="breadcrumb-item" aria-current="page">Home</li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                        <li class="breadcrumb-item" aria-current="page">Dashboard</li>
                       </ul>
                     </div>
                   </div>
                 </div>
               </div>
               
-          <!-- [ daily sales section ] start -->
-          <div class="col-md-6 col-xl-4">
+          <!-- [ Total Offers ] start -->
+          <div class="col-md-6 col-xl-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="mb-4">Daily Sales</h6>
+                <h6 class="mb-4">Total Offers</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
-                    <h3 class="f-w-300 d-flex align-items-center m-b-0"
-                      ><i class="feather icon-arrow-up text-success f-30 m-r-10"></i>$249.95</h3
-                    >
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                      <i class="feather icon-package text-primary f-30 m-r-10"></i>
+                      <span id="total-offers">{{ number_format($totalOffers) }}</span>
+                    </h3>
                   </div>
-
                   <div class="col-3 text-end">
-                    <p class="m-b-0">67%</p>
+                    <p class="m-b-0">
+                      <span class="badge bg-light-success" id="active-offers">{{ $activeOffers }} Active</span>
+                    </p>
                   </div>
                 </div>
                 <div class="progress m-t-30" style="height: 7px">
-                  <div
-                    class="progress-bar bg-brand-color-1"
-                    role="progressbar"
-                    style="width: 50%"
-                    aria-valuenow="50"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
+                  <div id="offers-progress" class="progress-bar bg-primary" role="progressbar" 
+                       style="width: {{ $totalOffers > 0 ? ($activeOffers / $totalOffers) * 100 : 0 }}%"></div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- [ daily sales section ] end -->
+          <!-- [ Total Offers ] end -->
 
-          <!-- [ Monthly  sales section ] start -->
-          <div class="col-md-6 col-xl-4">
+          <!-- [ Active Subscribers ] start -->
+          <div class="col-md-6 col-xl-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="mb-4">Monthly Sales</h6>
+                <h6 class="mb-4">Active Subscribers</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
-                    <h3 class="f-w-300 d-flex align-items-center m-b-0"
-                      ><i class="feather icon-arrow-down text-danger f-30 m-r-10"></i>$2.942.32</h3
-                    >
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                      <i class="feather icon-user-check text-success f-30 m-r-10"></i>
+                      <span id="active-subscribers">{{ number_format($totalActive) }}</span>
+                    </h3>
                   </div>
                   <div class="col-3 text-end">
-                    <p class="m-b-0">36%</p>
+                    <p class="m-b-0" id="active-change">
+                      @php
+                          $total = $totalActive + $totalFailed + $totalCanceled;
+                          $percentage = $total > 0 ? ($totalActive / $total) * 100 : 0;
+                      @endphp
+                      {{ number_format($percentage, 1) }}%
+                    </p>
                   </div>
                 </div>
                 <div class="progress m-t-30" style="height: 7px">
-                  <div
-                    class="progress-bar bg-brand-color-2"
-                    role="progressbar"
-                    style="width: 35%"
-                    aria-valuenow="35"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
+                  <div id="active-progress" class="progress-bar bg-success" role="progressbar" 
+                       style="width: {{ $total > 0 ? ($totalActive / $total) * 100 : 0 }}%"></div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- [ Monthly  sales section ] end -->
+          <!-- [ Active Subscribers ] end -->
 
-          <!-- [ year  sales section ] start -->
-          <div class="col-md-12 col-xl-4">
+          <!-- [ Failed Subscribers ] start -->
+          <div class="col-md-6 col-xl-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="mb-4">Yearly Sales</h6>
+                <h6 class="mb-4">Failed Subscribers</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
-                    <h3 class="f-w-300 d-flex align-items-center m-b-0"
-                      ><i class="feather icon-arrow-up text-success f-30 m-r-10"></i>$8.638.32</h3
-                    >
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                      <i class="feather icon-user-x text-danger f-30 m-r-10"></i>
+                      <span id="failed-subscribers">{{ number_format($totalFailed) }}</span>
+                    </h3>
                   </div>
                   <div class="col-3 text-end">
-                    <p class="m-b-0">80%</p>
+                    <p class="m-b-0" id="failed-percentage">
+                      @php
+                          $total = $totalActive + $totalFailed + $totalCanceled;
+                          $percentage = $total > 0 ? ($totalFailed / $total) * 100 : 0;
+                      @endphp
+                      {{ number_format($percentage, 1) }}%
+                    </p>
                   </div>
                 </div>
                 <div class="progress m-t-30" style="height: 7px">
-                  <div
-                    class="progress-bar bg-brand-color-1"
-                    role="progressbar"
-                    style="width: 70%"
-                    aria-valuenow="70"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                  ></div>
+                  <div id="failed-progress" class="progress-bar bg-danger" role="progressbar" 
+                       style="width: {{ $total > 0 ? ($totalFailed / $total) * 100 : 0 }}%"></div>
                 </div>
               </div>
             </div>
           </div>
-          <!-- [ year  sales section ] end -->
+          <!-- [ Failed Subscribers ] end -->
 
-          <!-- [ worldLow section ] start -->
-          <div class="col-xl-8 col-md-6">
+          <!-- [ Canceled Subscribers ] start -->
+          <div class="col-md-6 col-xl-3">
+            <div class="card">
+              <div class="card-body">
+                <h6 class="mb-4">Canceled Subscribers</h6>
+                <div class="row d-flex align-items-center">
+                  <div class="col-9">
+                    <h3 class="f-w-300 d-flex align-items-center m-b-0">
+                      <i class="feather icon-user-minus text-warning f-30 m-r-10"></i>
+                      <span id="canceled-subscribers">{{ number_format($totalCanceled) }}</span>
+                    </h3>
+              </div>
+                  <div class="col-3 text-end">
+                    <p class="m-b-0" id="canceled-percentage">
+                      @php
+                          $total = $totalActive + $totalFailed + $totalCanceled;
+                          $percentage = $total > 0 ? ($totalCanceled / $total) * 100 : 0;
+                      @endphp
+                      {{ number_format($percentage, 1) }}%
+                    </p>
+            </div>
+          </div>
+                <div class="progress m-t-30" style="height: 7px">
+                  <div id="canceled-progress" class="progress-bar bg-warning" role="progressbar" 
+                       style="width: {{ $total > 0 ? ($totalCanceled / $total) * 100 : 0 }}%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- [ Canceled Subscribers ] end -->
+
+          <!-- [ Emergency Credit Status ] start -->
+          <div class="col-md-6">
             <div class="card">
               <div class="card-header">
-                <h5>Users From United States</h5>
+                <h5>Emergency Credit Status</h5>
               </div>
               <div class="card-body">
-                <div id="world-low" style="height: 450px"></div>
+                <div class="row align-items-center mb-4">
+                  <div class="col-8">
+                    <h3 class="f-w-300 d-flex align-items-center">
+                      <i class="feather icon-alert-circle text-info f-30 m-r-10"></i>
+                      <span id="emergency-credit-count">0</span>
+                    </h3>
+                    <p class="mb-0">Subscribers Using Emergency Credit</p>
+                  </div>
+                  <div class="col-4 text-end">
+                    <p class="mb-0" id="emergency-percentage">0%</p>
+                  </div>
+                </div>
+                <div class="progress" style="height: 7px">
+                  <div id="emergency-progress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+                </div>
               </div>
             </div>
           </div>
-          <!-- [ worldLow section ] end -->
+          <!-- [ Emergency Credit Status ] end -->
 
-          <!-- [ statistics year chart ] start -->
-          <div class="col-xl-4 col-md-6">
-            <div class="card bg-primary">
-              <div class="card-header border-0">
-                <h5 class="text-white">Earnings</h5>
-              </div>
-              <div class="card-body" style="padding: 0 25px">
-                <div class="earning-text mb-0">
-                  <h3 class="mb-2 text-white f-w-300">$4295.36 <i class="feather icon-arrow-up teal accent-3"></i></h3>
-                  <span class="text-uppercase text-white d-block">Total Earnings</span>
-                </div>
-                <div id="Widget-line-chart" class="WidgetlineChart2 ChartShadow" style="height: 180px"></div>
-              </div>
-            </div>
+          <!-- [ Status Distribution Chart ] start -->
+          <div class="col-md-6">
             <div class="card">
-              <div class="card-body border-bottom">
-                <div class="row d-flex align-items-center">
-                  <div class="col-auto">
-                    <i class="feather icon-zap f-30 text-success"></i>
-                  </div>
-                  <div class="col">
-                    <h3 class="f-w-300">235</h3>
-                    <span class="d-block text-uppercase">TOTAL IDEAS</span>
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="row d-flex align-items-center">
-                  <div class="col-auto">
-                    <i class="feather icon-map-pin f-30 text-primary"></i>
-                  </div>
-                  <div class="col">
-                    <h3 class="f-w-300">26</h3>
-                    <span class="d-block text-uppercase">TOTAL LOCATIONS</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- [ statistics year chart ] end -->
-
-          <!-- [social-media section] start -->
-          <div class="col-md-12 col-xl-4">
-            <div class="card card-social">
-              <div class="card-body border-bottom">
-                <div class="row align-items-center justify-content-center">
-                  <div class="col-auto">
-                    <i class="fab fa-facebook-f text-primary f-36"></i>
-                  </div>
-                  <div class="col text-end">
-                    <h3>12,281</h3>
-                    <h5 class="text-success mb-0">+7.2% <span class="text-muted">Total Likes</span></h5>
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="row align-items-center justify-content-center card-active">
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Target:</span>35,098</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 60%; height: 6px"
-                        aria-valuenow="60"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Duration:</span>3,539</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-brand-color-2"
-                        role="progressbar"
-                        style="width: 45%; height: 6px"
-                        aria-valuenow="45"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6 col-xl-4">
-            <div class="card card-social">
-              <div class="card-body border-bottom">
-                <div class="row align-items-center justify-content-center">
-                  <div class="col-auto">
-                    <i class="fab fa-twitter text-primary f-36"></i>
-                  </div>
-                  <div class="col text-end">
-                    <h3>11,200</h3>
-                    <h5 class="text-info mb-0">+6.2% <span class="text-muted">Total Likes</span></h5>
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="row align-items-center justify-content-center card-active">
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Target:</span>34,185</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-success"
-                        role="progressbar"
-                        style="width: 40%; height: 6px"
-                        aria-valuenow="40"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Duration:</span>4,567</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-primary"
-                        role="progressbar"
-                        style="width: 70%; height: 6px"
-                        aria-valuenow="70"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6 col-xl-4">
-            <div class="card card-social">
-              <div class="card-body border-bottom">
-                <div class="row align-items-center justify-content-center">
-                  <div class="col-auto">
-                    <i class="fab fa-google-plus-g text-danger f-36"></i>
-                  </div>
-                  <div class="col text-end">
-                    <h3>10,500</h3>
-                    <h5 class="text-primary mb-0">+5.9% <span class="text-muted">Total Likes</span></h5>
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="row align-items-center justify-content-center card-active">
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Target:</span>25,998</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 80%; height: 6px"
-                        aria-valuenow="80"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-6">
-                    <h6 class="text-center m-b-10"><span class="text-muted m-r-5">Duration:</span>7,753</h6>
-                    <div class="progress">
-                      <div
-                        class="progress-bar bg-brand-color-2"
-                        role="progressbar"
-                        style="width: 50%; height: 6px"
-                        aria-valuenow="50"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- [social-media section] end -->
-
-          <!-- [ rating list ] starts-->
-          <div class="col-xl-4 col-md-6">
-            <div class="card user-list">
               <div class="card-header">
-                <h5>Rating</h5>
+                <h5>Subscriber Status Distribution</h5>
               </div>
               <div class="card-body">
-                <div class="row align-items-center justify-content-center m-b-20">
-                  <div class="col-6">
-                    <h2 class="f-w-300 d-flex align-items-center float-start m-0"
-                      >4.7 <i class="fas fa-star f-10 m-l-10 text-warning"></i
-                    ></h2>
-                  </div>
-                  <div class="col-6">
-                    <h6 class="d-flex align-items-center float-end m-0">0.4 <i class="fas fa-caret-up text-success f-22 m-l-10"></i></h6>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col-xl-12">
-                    <h6 class="align-items-center float-start"><i class="fas fa-star f-10 m-r-10 text-warning"></i>5</h6>
-                    <h6 class="align-items-center float-end">384</h6>
-                    <div class="progress m-t-30 m-b-20" style="height: 6px">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 70%"
-                        aria-valuenow="70"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-xl-12">
-                    <h6 class="align-items-center float-start"><i class="fas fa-star f-10 m-r-10 text-warning"></i>4</h6>
-                    <h6 class="align-items-center float-end">145</h6>
-                    <div class="progress m-t-30 m-b-20" style="height: 6px">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 35%"
-                        aria-valuenow="35"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-xl-12">
-                    <h6 class="align-items-center float-start"><i class="fas fa-star f-10 m-r-10 text-warning"></i>3</h6>
-                    <h6 class="align-items-center float-end">24</h6>
-                    <div class="progress m-t-30 m-b-20" style="height: 6px">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 25%"
-                        aria-valuenow="25"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-xl-12">
-                    <h6 class="align-items-center float-start"><i class="fas fa-star f-10 m-r-10 text-warning"></i>2</h6>
-                    <h6 class="align-items-center float-end">1</h6>
-                    <div class="progress m-t-30 m-b-20" style="height: 6px">
-                      <div
-                        class="progress-bar bg-brand-color-1"
-                        role="progressbar"
-                        style="width: 10%"
-                        aria-valuenow="10"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                  <div class="col-xl-12">
-                    <h6 class="align-items-center float-start"><i class="fas fa-star f-10 m-r-10 text-warning"></i>1</h6>
-                    <h6 class="align-items-center float-end">0</h6>
-                    <div class="progress m-t-30 m-b-20" style="height: 6px">
-                      <div
-                        class="progress-bar"
-                        role="progressbar"
-                        style="width: 0"
-                        aria-valuenow="0"
-                        aria-valuemin="0"
-                        aria-valuemax="100"
-                      ></div>
-                    </div>
-                  </div>
-                </div>
+                <div id="status-distribution-chart"></div>
               </div>
             </div>
           </div>
-          <!-- [ rating list ] end -->
+          <!-- [ Status Distribution Chart ] end -->
 
-          <!-- [ Recent Users ] start -->
-          <div class="col-xl-8 col-md-6">
-            <div class="card Recent-Users">
+          <!-- [ Service Statistics ] start -->
+          <div class="col-md-12">
+            <div class="card">
               <div class="card-header">
-                <h5>Recent Users</h5>
+                <h5>Top Services by Subscribers</h5>
               </div>
-              <div class="card-body px-0 py-3">
-                <div class="table-responsive">
-                  <table class="table table-hover">
-                    <tbody>
-                      <tr class="unread">
-                        <td
-                          ><img class="rounded-circle" style="width: 40px" src="../assets/images/user/avatar-1.jpg" alt="activity-user"
-                        /></td>
-                        <td>
-                          <h6 class="mb-1">Isabella Christensen</h6>
-                          <p class="m-0">Lorem Ipsum is simply dummy</p>
-                        </td>
-                        <td>
-                          <h6 class="text-muted"><i class="fas fa-circle text-success f-10 m-r-15"></i>11 MAY 12:56</h6>
-                        </td>
-                        <td
-                          ><a href="#!" class="badge me-2 bg-brand-color-2 text-white f-12">Reject</a
-                          ><a href="#!" class="badge me-2 bg-brand-color-1 text-white f-12">Approve</a></td
-                        >
-                      </tr>
-                      <tr class="unread">
-                        <td
-                          ><img class="rounded-circle" style="width: 40px" src="../assets/images/user/avatar-2.jpg" alt="activity-user"
-                        /></td>
-                        <td>
-                          <h6 class="mb-1">Mathilde Andersen</h6>
-                          <p class="m-0">Lorem Ipsum is simply</p>
-                        </td>
-                        <td>
-                          <h6 class="text-muted"><i class="fas fa-circle text-danger f-10 m-r-15"></i>11 MAY 10:35</h6>
-                        </td>
-                        <td
-                          ><a href="#!" class="badge me-2 bg-brand-color-2 text-white f-12">Reject</a
-                          ><a href="#!" class="badge me-2 bg-brand-color-1 text-white f-12">Approve</a></td
-                        >
-                      </tr>
-                      <tr class="unread">
-                        <td
-                          ><img class="rounded-circle" style="width: 40px" src="../assets/images/user/avatar-3.jpg" alt="activity-user"
-                        /></td>
-                        <td>
-                          <h6 class="mb-1">Karla Sorensen</h6>
-                          <p class="m-0">Lorem Ipsum is simply dummy</p>
-                        </td>
-                        <td>
-                          <h6 class="text-muted"><i class="fas fa-circle text-success f-10 m-r-15"></i>9 MAY 17:38</h6>
-                        </td>
-                        <td
-                          ><a href="#!" class="badge me-2 bg-brand-color-2 text-white f-12">Reject</a
-                          ><a href="#!" class="badge me-2 bg-brand-color-1 text-white f-12">Approve</a></td
-                        >
-                      </tr>
-                      <tr class="unread">
-                        <td
-                          ><img class="rounded-circle" style="width: 40px" src="../assets/images/user/avatar-1.jpg" alt="activity-user"
-                        /></td>
-                        <td>
-                          <h6 class="mb-1">Ida Jorgensen</h6>
-                          <p class="m-0">Lorem Ipsum is simply</p>
-                        </td>
-                        <td>
-                          <h6 class="text-muted f-w-300"><i class="fas fa-circle text-danger f-10 m-r-15"></i>19 MAY 12:56</h6>
-                        </td>
-                        <td
-                          ><a href="#!" class="badge me-2 bg-brand-color-2 text-white f-12">Reject</a
-                          ><a href="#!" class="badge me-2 bg-brand-color-1 text-white f-12">Approve</a></td
-                        >
-                      </tr>
-                      <tr class="unread">
-                        <td
-                          ><img class="rounded-circle" style="width: 40px" src="../assets/images/user/avatar-2.jpg" alt="activity-user"
-                        /></td>
-                        <td>
-                          <h6 class="mb-1">Albert Andersen</h6>
-                          <p class="m-0">Lorem Ipsum is</p>
-                        </td>
-                        <td>
-                          <h6 class="text-muted"><i class="fas fa-circle text-success f-10 m-r-15"></i>21 July 12:56</h6>
-                        </td>
-                        <td
-                          ><a href="#!" class="badge me-2 bg-brand-color-2 text-white f-12">Reject</a
-                          ><a href="#!" class="badge me-2 bg-brand-color-1 text-white f-12">Approve</a></td
-                        >
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+              <div class="card-body">
+                <div id="services-chart"></div>
               </div>
             </div>
           </div>
-          <!-- [ Recent Users ] end -->
+          <!-- [ Service Statistics ] end -->
         </div>
         <!-- [ Main Content ] end -->
       </div>
@@ -521,12 +225,256 @@
     <!-- [Page Specific JS] start -->
     <!-- apexcharts js -->
     <script src="{{ asset('admin/assets/js/plugins/apexcharts.min.js') }}"></script>
-    <script src="{{ asset('admin/assets/js/plugins/jsvectormap.min.js') }}"></script>
-    <script src="{{ asset('admin/assets/js/plugins/world.js') }}"></script>
     
-    <script src="{{ asset('admin/assets/js/pages/dashboard-default.js') }}"></script>
     @include('layouts.footer_js')
    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize chart variables at a wider scope
+            let statusChart = null;
+            let servicesChart = null;
+            let dashboardData = null;
+            let refreshInterval = null;
+
+            function initializeStatusDistributionChart(data) {
+                try {
+                    // Destroy existing chart if it exists
+                    if (statusChart) {
+                        statusChart.destroy();
+                    }
+
+                    const options = {
+                        series: data.map(item => item.count),
+                        chart: {
+                            type: 'donut',
+                            height: 320
+                        },
+                        labels: data.map(item => item.status),
+                        colors: ['#4CAF50', '#F44336', '#FFC107'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '70%'
+                                }
+                            }
+                        }
+                    };
+
+                    const chartElement = document.querySelector("#status-distribution-chart");
+                    if (chartElement) {
+                        statusChart = new ApexCharts(chartElement, options);
+                        statusChart.render();
+                    }
+                } catch (error) {
+                    console.error('Error initializing status distribution chart:', error);
+                }
+            }
+
+            function initializeServicesChart(data) {
+                try {
+                    // Destroy existing chart if it exists
+                    if (servicesChart) {
+                        servicesChart.destroy();
+                    }
+
+                const options = {
+                    series: [{
+                        name: 'Subscribers',
+                            data: data.map(service => service.total_subscribers)
+                    }],
+                    chart: {
+                        type: 'bar',
+                            height: 350
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                                columnWidth: '55%',
+                                endingShape: 'rounded'
+                        }
+                    },
+                    dataLabels: {
+                        enabled: false
+                    },
+                    xaxis: {
+                            categories: data.map(service => service.name)
+                    },
+                    yaxis: {
+                        title: {
+                                text: 'Subscribers'
+                            }
+                        },
+                        fill: {
+                            opacity: 1
+                        },
+                        colors: ['#5c6bc0']
+                    };
+
+                    const chartElement = document.querySelector("#services-chart");
+                    if (chartElement) {
+                        servicesChart = new ApexCharts(chartElement, options);
+                        servicesChart.render();
+                    }
+                } catch (error) {
+                    console.error('Error initializing services chart:', error);
+                }
+            }
+
+            // Function to fetch dashboard data
+            async function fetchDashboardData() {
+                try {
+                    const [dashboardResponse, ecResponse] = await Promise.all([
+                        fetch('/api/v1/dashboard-stats'),
+                        fetch('/emergency-credit/status/data')
+                    ]);
+
+                    if (!dashboardResponse.ok || !ecResponse.ok) {
+                        throw new Error('Failed to fetch dashboard data');
+                    }
+
+                    const dashboardData = await dashboardResponse.json();
+                    const ecData = await ecResponse.json();
+
+                    return { dashboardData, ecData };
+                } catch (error) {
+                    console.error('Error fetching dashboard data:', error);
+                    throw error;
+                }
+            }
+
+            // Function to update dashboard metrics with animation
+            function updateMetricWithAnimation(elementId, newValue, duration = 1000) {
+                const element = document.getElementById(elementId);
+                if (!element) return;
+
+                const currentValue = parseFloat(element.textContent.replace(/,/g, '')) || 0;
+                const targetValue = parseFloat(newValue);
+                const startTime = performance.now();
+
+                function animate(currentTime) {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    
+                    const currentValue = Math.floor(currentValue + (targetValue - currentValue) * progress);
+                    element.textContent = currentValue.toLocaleString();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    }
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            // Function to update all metrics with animations
+            function updateDashboard(data) {
+                try {
+                    // Update total offers and active offers with animation
+                    const totalOffers = data.total_offers || 0;
+                    const activeOffers = data.active_offers || 0;
+                    
+                    updateMetricWithAnimation('total-offers', totalOffers);
+                    document.getElementById('active-offers').textContent = `${activeOffers} Active`;
+                    
+                    const offersPercentage = totalOffers > 0 ? (activeOffers / totalOffers) * 100 : 0;
+                    const offersProgressElement = document.getElementById('offers-progress');
+                    if (offersProgressElement) {
+                        offersProgressElement.style.transition = 'width 1s ease-in-out';
+                        offersProgressElement.style.width = `${offersPercentage}%`;
+                    }
+
+                    // Calculate total subscribers from status distribution
+                    const statusDistribution = data.status_distribution || [];
+                    const totalSubscribers = statusDistribution.reduce((sum, item) => sum + (item.count || 0), 0);
+
+                    // Update subscriber counts and percentages with animation
+                    const activeData = statusDistribution.find(item => item.status === 'ACTIVE') || { count: 0 };
+                    const failedData = statusDistribution.find(item => item.status === 'FAILED') || { count: 0 };
+                    const canceledData = statusDistribution.find(item => item.status === 'CANCELED') || { count: 0 };
+
+                    updateMetricWithAnimation('active-subscribers', activeData.count);
+                    updateMetricWithAnimation('failed-subscribers', failedData.count);
+                    updateMetricWithAnimation('canceled-subscribers', canceledData.count);
+
+                    // Update percentages with animation
+                    const activePercentage = totalSubscribers > 0 ? (activeData.count / totalSubscribers) * 100 : 0;
+                    const failedPercentage = totalSubscribers > 0 ? (failedData.count / totalSubscribers) * 100 : 0;
+                    const canceledPercentage = totalSubscribers > 0 ? (canceledData.count / totalSubscribers) * 100 : 0;
+
+                    document.getElementById('active-change').textContent = `${activePercentage.toFixed(1)}%`;
+                    document.getElementById('failed-percentage').textContent = `${failedPercentage.toFixed(1)}%`;
+                    document.getElementById('canceled-percentage').textContent = `${canceledPercentage.toFixed(1)}%`;
+
+                    // Update progress bars with animation
+                    ['active-progress', 'failed-progress', 'canceled-progress'].forEach((id, index) => {
+                        const element = document.getElementById(id);
+                        if (element) {
+                            element.style.transition = 'width 1s ease-in-out';
+                            element.style.width = `${[activePercentage, failedPercentage, canceledPercentage][index]}%`;
+                        }
+                    });
+
+                    // Initialize charts with animation
+                    if (statusDistribution.length > 0 && document.querySelector("#status-distribution-chart")) {
+                        initializeStatusDistributionChart(statusDistribution);
+                    }
+                    
+                    const servicesStats = data.services_stats || [];
+                    if (servicesStats.length > 0 && document.querySelector("#services-chart")) {
+                        initializeServicesChart(servicesStats);
+                    }
+                } catch (error) {
+                    console.error('Error updating dashboard:', error);
+                }
+            }
+
+            // Function to update emergency credit data
+            function updateEmergencyCreditData(ecData, totalSubscribers) {
+                const totalEC = ecData.total || 0;
+                const percentage = totalSubscribers > 0 ? (totalEC / totalSubscribers) * 100 : 0;
+                
+                updateMetricWithAnimation('emergency-credit-count', totalEC);
+                document.getElementById('emergency-percentage').textContent = `${percentage.toFixed(1)}%`;
+                
+                const ecProgressElement = document.getElementById('emergency-progress');
+                if (ecProgressElement) {
+                    ecProgressElement.style.transition = 'width 1s ease-in-out';
+                    ecProgressElement.style.width = `${percentage}%`;
+                }
+            }
+
+            // Function to refresh dashboard data
+            async function refreshDashboard() {
+                try {
+                    const { dashboardData, ecData } = await fetchDashboardData();
+                    updateDashboard(dashboardData);
+                    
+                    const totalSubscribers = (dashboardData.status_distribution || [])
+                        .reduce((sum, item) => sum + (item.count || 0), 0);
+                    
+                    updateEmergencyCreditData(ecData, totalSubscribers);
+                } catch (error) {
+                    console.error('Error refreshing dashboard:', error);
+                }
+            }
+
+            // Initialize dashboard and set up auto-refresh
+            refreshDashboard();
+            refreshInterval = setInterval(refreshDashboard, 30000); // Refresh every 30 seconds
+
+            // Clean up interval on page unload
+            window.addEventListener('beforeunload', function() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+            });
+        });
+    </script>
   </body>
   <!-- [Body] end -->
+</html>
+
 </html>

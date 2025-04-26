@@ -8,23 +8,27 @@ use App\Http\Controllers\EmergencyCreditController;
 use App\Http\Controllers\DashboardController;
 // use App\Http\Controllers\OfferController;
 
-Route::prefix('admin1')->name('admin.')->group(function() {
+// Admin Routes
+Route::prefix('admin')->name('admin.')->group(function() {
+    // Auth Routes
     Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/register', [AuthController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [AuthController::class, 'register']);
    
-     // Admin Dashboard Route
-     Route::get('/admin', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard Route
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Emergency Credit Dashboard
+    Route::get('/emergency-credit', [ServiceReportController::class, 'emergencyCreditDashboard'])->name('emergency-credit');
 });
 
+// Redirect root to admin dashboard
 Route::get('/', function () {
-    return redirect()->route('status_wise_services');
+    return redirect()->route('admin.dashboard');
 });
-
-// Add dashboard route
-Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::get('/all-services', function () {
     return view('admin.all_services');
@@ -83,9 +87,7 @@ Route::get('/overall-subscriber-report', [ServiceReportController::class, 'overa
 // Route::get('/admin/setting/user/delete', [AuthController::class, 'deleteUser
 // '])->name('admin.setting.user.delete');
 
-Route::get('/admin1', function () {
-    return view('admin.index');
-});
+Route::get('/admin1', [DashboardController::class, 'index'])->name('admin.dashboard');
 
 // routes/web.php
 // Route::get('/admin', [AdminController::class, 'dashboard'])->name('admin.dashboard');
@@ -120,3 +122,6 @@ Route::prefix('emergency-credit')->group(function () {
     Route::get('/status-wise-services', [EmergencyCreditController::class, 'statusWiseService'])->name('status.wise.services');
     Route::get('/api/v1/status-wise-report', [EmergencyCreditController::class, 'statusWiseServiceData']);
 });
+
+// API Routes
+Route::get('/api/v1/dashboard-stats', [ServiceReportController::class, 'getDashboardStats']);

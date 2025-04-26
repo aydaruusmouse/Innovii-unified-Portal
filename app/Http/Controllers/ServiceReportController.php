@@ -60,6 +60,8 @@ class ServiceReportController extends Controller
             $startDate = $request->input('start_date');
             $endDate = $request->input('end_date');
             $status = $request->input('status');
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
             
             if (!$serviceName) {
                 return response()->json([
@@ -84,11 +86,15 @@ class ServiceReportController extends Controller
                 $query->where('status', $status);
             }
 
-            // Get the data
-            $serviceData = $query->orderBy('date', 'desc')->get();
+            // Get paginated data
+            $paginatedData = $query->orderBy('date', 'desc')
+                                 ->paginate($perPage, ['*'], 'page', $page);
+
+            // Get all data for charts (without pagination)
+            $allData = $query->orderBy('date', 'desc')->get();
 
             // Group data by status
-            $groupedData = $serviceData->groupBy('status')
+            $groupedData = $allData->groupBy('status')
                 ->map(function ($items) {
                     return $items->map(function ($item) {
                         return [
@@ -99,11 +105,11 @@ class ServiceReportController extends Controller
                 });
 
             // Calculate totals for pie chart
-            $activeCount = $serviceData->where('status', 'ACTIVE')->sum('base_count');
-            $inactiveCount = $serviceData->where('status', 'INACTIVE')->sum('base_count');
+            $activeCount = $allData->where('status', 'ACTIVE')->sum('base_count');
+            $inactiveCount = $allData->where('status', 'INACTIVE')->sum('base_count');
 
             // Prepare table data
-            $tableData = $serviceData->map(function ($item) {
+            $tableData = $paginatedData->map(function ($item) {
                 return [
                     'start_date' => $item->date,
                     'end_date' => $item->date,
@@ -119,9 +125,17 @@ class ServiceReportController extends Controller
                 'canceled' => $groupedData->get('CANCELED', collect())->values(),
                 'active_count' => $activeCount,
                 'inactive_count' => $inactiveCount,
-                'dates' => $serviceData->pluck('date')->unique()->values(),
-                'subscription_counts' => $serviceData->pluck('base_count')->values(),
-                'table_data' => $tableData
+                'dates' => $allData->pluck('date')->unique()->values(),
+                'subscription_counts' => $allData->pluck('base_count')->values(),
+                'table_data' => $tableData,
+                'pagination' => [
+                    'total' => $paginatedData->total(),
+                    'per_page' => $paginatedData->perPage(),
+                    'current_page' => $paginatedData->currentPage(),
+                    'last_page' => $paginatedData->lastPage(),
+                    'from' => $paginatedData->firstItem(),
+                    'to' => $paginatedData->lastItem()
+                ]
             ]);
 
         } catch (\Exception $e) {
@@ -528,6 +542,122 @@ class ServiceReportController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Overall Subscriber Report Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getDashboardStats()
+    {
+        try {
+            // Get today's date
+            $today = now()->format('Y-m-d');
+            
+            // Get daily active subscribers from subscription_base
+            $dailyActive = DB::table('subscription_base')
+                ->where('date', $today)
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            // Get monthly active subscribers (last 30 days)
+            $monthlyActive = DB::table('subscription_base')
+                ->where('date', '>=', now()->subDays(30)->format('Y-m-d'))
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            // Get yearly active subscribers (last 365 days)
+            $yearlyActive = DB::table('subscription_base')
+                ->where('date', '>=', now()->subDays(365)->format('Y-m-d'))
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            // Get total services count
+            $totalServices = DB::table('subs_in_out_count')
+                ->select('name')
+                ->distinct()
+                ->count();
+
+            // Get total active subscribers by service
+            $servicesStats = DB::table('subscription_base')
+                ->select('name', DB::raw('SUM(base_count) as total_subscribers'))
+                ->where('status', 'ACTIVE')
+                ->where('date', $today)
+                ->groupBy('name')
+                ->orderBy('total_subscribers', 'desc')
+                ->limit(5)
+                ->get();
+
+            // Get subscription trends for the last 7 days
+            $trendData = DB::table('subscription_base')
+                ->select('date', DB::raw('SUM(base_count) as total_subscribers'))
+                ->where('status', 'ACTIVE')
+                ->where('date', '>=', now()->subDays(7)->format('Y-m-d'))
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+
+            // Get status distribution
+            $statusDistribution = DB::table('subscription_base')
+                ->select('status', DB::raw('SUM(base_count) as count'))
+                ->where('date', $today)
+                ->groupBy('status')
+                ->get();
+
+            // Get recent activity (last 5 days)
+            $recentActivity = DB::table('subscription_base')
+                ->select('date', 'name', 'status', DB::raw('SUM(base_count) as total_subscribers'))
+                ->where('date', '>=', now()->subDays(5)->format('Y-m-d'))
+                ->groupBy('date', 'name', 'status')
+                ->orderBy('date', 'desc')
+                ->limit(10)
+                ->get();
+
+            // Calculate percentage changes
+            $yesterdayActive = DB::table('subscription_base')
+                ->where('date', now()->subDay()->format('Y-m-d'))
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            $dailyChange = $yesterdayActive > 0 ? (($dailyActive - $yesterdayActive) / $yesterdayActive) * 100 : 0;
+
+            $lastMonthActive = DB::table('subscription_base')
+                ->where('date', '>=', now()->subDays(60)->format('Y-m-d'))
+                ->where('date', '<', now()->subDays(30)->format('Y-m-d'))
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            $monthlyChange = $lastMonthActive > 0 ? (($monthlyActive - $lastMonthActive) / $lastMonthActive) * 100 : 0;
+
+            $lastYearActive = DB::table('subscription_base')
+                ->where('date', '>=', now()->subDays(730)->format('Y-m-d'))
+                ->where('date', '<', now()->subDays(365)->format('Y-m-d'))
+                ->where('status', 'ACTIVE')
+                ->sum('base_count');
+
+            $yearlyChange = $lastYearActive > 0 ? (($yearlyActive - $lastYearActive) / $lastYearActive) * 100 : 0;
+
+            return response()->json([
+                'daily_active' => $dailyActive,
+                'monthly_active' => $monthlyActive,
+                'yearly_active' => $yearlyActive,
+                'daily_change' => round($dailyChange, 1),
+                'monthly_change' => round($monthlyChange, 1),
+                'yearly_change' => round($yearlyChange, 1),
+                'total_services' => $totalServices,
+                'services_stats' => $servicesStats,
+                'trend_data' => $trendData,
+                'status_distribution' => $statusDistribution,
+                'recent_activity' => $recentActivity
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Dashboard Stats Error:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

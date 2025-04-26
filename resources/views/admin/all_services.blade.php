@@ -28,7 +28,7 @@
                   <h5 class="m-b-10">Service Overview</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                   <li class="breadcrumb-item">SDF Reports</li>
                   <li class="breadcrumb-item">Service Overview</li>
                 </ul>
@@ -148,7 +148,7 @@
           <div class="col-md-4">
             <div class="card">
               <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Top 3 Most Popular Offers</h5>
+                <h5 class="mb-0">Top  Most Popular Offers</h5>
                 <span class="badge bg-primary">Live</span>
               </div>
               <div class="card-body">

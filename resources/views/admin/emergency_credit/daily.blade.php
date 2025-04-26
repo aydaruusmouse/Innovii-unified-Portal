@@ -25,7 +25,7 @@
                   <h5 class="m-b-10">Daily Emergency Credit Report</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
                   <li class="breadcrumb-item">Emergency Credit</li>
                   <li class="breadcrumb-item">Daily Report</li>
                 </ul>
