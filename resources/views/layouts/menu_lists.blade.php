@@ -79,8 +79,9 @@
   </ul>
 </li>
 
+
 <li class="pc-item pc-caption">
-  <label style="font-size: 14px;">CRPT Reports</label>
+  <label style="font-size: 14px;">CRBT Reports</label>
   <i data-feather="sidebar"></i>
 </li>
 <li class="pc-item pc-hasmenu">
@@ -88,37 +89,66 @@
     <span class="pc-micon">
       <i data-feather="music"></i>
     </span>
-    <span class="pc-mtext" style="font-size: 14.5px;">CRPT Reports</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
+    <span class="pc-mtext" style="font-size: 14.5px;">CRBT Core Reports</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
   </a>
   <ul class="pc-submenu">
-    <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 14px;">All Services</a></li>
-    <li class="pc-item pc-hasmenu">
-      <a href="#!" class="pc-link" style="font-size: 14px;">Single Service<span class="pc-arrow"><i class="ti ti-chevron-right"></i></span></a>
-      <ul class="pc-submenu">
-        <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 3.1</a></li>
-        <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 3.2</a></li>
-        <li class="pc-item pc-hasmenu">
-          <a href="#!" class="pc-link" style="font-size: 12px;">Monthly/Weekly Reports<span class="pc-arrow"><i class="ti ti-chevron-right"></i></span></a>
-          <ul class="pc-submenu">
-            <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Single Service</a></li>
-            <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 4.2</a></li>
-          </ul>
-        </li>
-      </ul>
+    <li class="pc-item">
+      <a class="pc-link" href="{{ route('crbt.daily_mis') }}" style="font-size: 14px;">Daily CRBT MIS</a>
     </li>
-    <li class="pc-item pc-hasmenu">
-      <a href="#!" class="pc-link" style="font-size: 14px;">Monthly/Weekly Reports<span class="pc-arrow"><i class="ti ti-chevron-right"></i></span></a>
-      <ul class="pc-submenu">
-        <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 3.1</a></li>
-        <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 3.2</a></li>
-        <li class="pc-item pc-hasmenu">
-          <a href="#!" class="pc-link" style="font-size: 12px;">Level 3.3<span class="pc-arrow"><i class="ti ti-chevron-right"></i></span></a>
-          <ul class="pc-submenu">
-            <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 4.1</a></li>
-            <li class="pc-item"><a class="pc-link" href="#!" style="font-size: 12px;">Level 4.2</a></li>
-          </ul>
-        </li>
-      </ul>
+    <li class="pc-item">
+      <a href="{{ route('crbt.hourly_mis') }}" class="pc-link" style="font-size: 14px;">Hourly CRBT MIS</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.interface_sub_unsub') }}" class="pc-link" style="font-size: 14px;">Interface-wise Sub/Unsub</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.interface_tone') }}" class="pc-link" style="font-size: 14px;">Interface-wise Tone Usage</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.status_cycle') }}" class="pc-link" style="font-size: 14px;">Status Cycle MIS</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.hlr_activations') }}" class="pc-link" style="font-size: 14px;">HLR Activations</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.user_info') }}" class="pc-link" style="font-size: 14px;">User Information</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.user_tone_info') }}" class="pc-link" style="font-size: 14px;">User Tone Information</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.billing_charges') }}" class="pc-link" style="font-size: 14px;">Billing & Charges</a>
+    </li>
+  </ul>
+</li>
+
+<li class="pc-item pc-hasmenu">
+  <a href="#!" class="pc-link">
+    <span class="pc-micon">
+      <i data-feather="briefcase"></i>
+    </span>
+    <span class="pc-mtext" style="font-size: 14.5px;">Corporate CRBT Reports</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
+  </a>
+  <ul class="pc-submenu">
+    <li class="pc-item">
+      <a class="pc-link" href="{{ route('crbt.corporate_info') }}" style="font-size: 14px;">Corporate Accounts</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('crbt.corporate_users') }}" class="pc-link" style="font-size: 14px;">Corporate Users</a>
+    </li>
+  </ul>
+</li>
+
+<li class="pc-item pc-hasmenu">
+  <a href="#!" class="pc-link">
+    <span class="pc-micon">
+      <i data-feather="database"></i>
+    </span>
+    <span class="pc-mtext" style="font-size: 14.5px;">Backup Reports</span><span class="pc-arrow"><i class="ti ti-chevron-right"></i></span>
+  </a>
+  <ul class="pc-submenu">
+    <li class="pc-item">
+      <a class="pc-link" href="{{ route('crbt.backup_reports') }}" style="font-size: 14px;">CRBT Core Backup</a>
     </li>
   </ul>
 </li>

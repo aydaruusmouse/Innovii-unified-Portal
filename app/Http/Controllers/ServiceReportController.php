@@ -668,4 +668,19 @@ class ServiceReportController extends Controller
             ], 500);
         }
     }
+
+    public function crptAllServices()
+    {
+        return view('admin.crpt.all_services');
+    }
+
+    public function crptSingleService()
+    {
+        return view('admin.crpt.single_service');
+    }
+
+    public function crptMonthlyWeekly()
+    {
+        return view('admin.crpt.monthly_weekly');
+    }
 } 

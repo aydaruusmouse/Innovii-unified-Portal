@@ -5,10 +5,8 @@
   <head>
     @include('layouts.heads_page')
     @include('layouts.heads_css')
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- ApexCharts -->
-    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="{{ asset('admin/assets/js/plugins/apexcharts.min.js') }}"></script>
   </head>
   <body>
     @include('layouts.layout_vertical')

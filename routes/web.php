@@ -6,6 +6,7 @@ use App\Http\Controllers\SingleServiceController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\EmergencyCreditController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CRBTController;
 // use App\Http\Controllers\OfferController;
 
 // Admin Routes
@@ -125,3 +126,31 @@ Route::prefix('emergency-credit')->group(function () {
 
 // API Routes
 Route::get('/api/v1/dashboard-stats', [ServiceReportController::class, 'getDashboardStats']);
+
+// CRBT Routes
+Route::prefix('crbt')->name('crbt.')->group(function () {
+    // Core Reports
+    Route::get('/daily-mis', [CRBTController::class, 'dailyMIS'])->name('daily_mis');
+    Route::get('/hourly-mis', [CRBTController::class, 'hourlyMIS'])->name('hourly_mis');
+    Route::get('/interface-sub-unsub', [CRBTController::class, 'interfaceSubUnsub'])->name('interface_sub_unsub');
+    Route::get('/interface-tone', [CRBTController::class, 'interfaceTone'])->name('interface_tone');
+    Route::get('/status-cycle', [CRBTController::class, 'statusCycle'])->name('status_cycle');
+    Route::get('/hlr-activations', [CRBTController::class, 'hlrActivations'])->name('hlr_activations');
+    Route::get('/user-info', [CRBTController::class, 'userInfo'])->name('user_info');
+    Route::get('/user-tone-info', [CRBTController::class, 'userToneInfo'])->name('user_tone_info');
+    Route::get('/billing-charges', [CRBTController::class, 'billingCharges'])->name('billing_charges');
+    
+    // Corporate Reports
+    Route::get('/corporate-info', [CRBTController::class, 'corporateInfo'])->name('corporate_info');
+    Route::get('/corporate-users', [CRBTController::class, 'corporateUsers'])->name('corporate_users');
+    
+    // Backup Reports
+    Route::get('/backup-reports', [CRBTController::class, 'backupReports'])->name('backup_reports');
+});
+
+// CRPT Routes
+Route::prefix('crpt')->name('crpt.')->group(function () {
+    Route::get('/all-services', [ServiceReportController::class, 'crptAllServices'])->name('all_services');
+    Route::get('/single-service', [ServiceReportController::class, 'crptSingleService'])->name('single_service');
+    Route::get('/monthly-weekly', [ServiceReportController::class, 'crptMonthlyWeekly'])->name('monthly_weekly');
+});

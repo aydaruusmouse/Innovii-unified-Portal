@@ -77,7 +77,6 @@ class OfferController extends Controller
             $activeOffers = Offer::where('status', 'ACTIVE')->count();
             
             // Get top 3 offers based on subscription base count
-           // ... existing code ...
             // Get top 3 offers based on subscription base count
             $topOffers = DB::table('offers')
                 ->select('offers.*', 'sb.base_count')
