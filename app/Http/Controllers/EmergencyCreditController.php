@@ -651,4 +651,284 @@ class EmergencyCreditController extends Controller
             ], 500);
         }
     }
+
+    // Revenue Reports Methods
+    public function revenueSummary()
+    {
+        return view('admin.emergency_credit.revenue_summary');
+    }
+
+    public function revenueSummaryData(Request $request)
+    {
+        try {
+            $cacheKey = 'emergency_credit_revenue_summary_' . md5(json_encode($request->all()));
+            
+            return Cache::remember($cacheKey, now()->addMinutes($this->cacheTime), function () use ($request) {
+                Log::info('Fetching revenue summary data', ['filters' => $request->all()]);
+                
+                // Set date range
+                $startDate = $request->start_date ?? date('Y-m-01'); // Default to first day of current month
+                $endDate = $request->end_date ?? date('Y-m-t'); // Default to last day of current month
+                
+                $startDateTime = $startDate . ' 00:00:00';
+                $endDateTime = $endDate . ' 23:59:59';
+
+                // Query for revenue summary (both minutes and data)
+                $query = DB::connection('mysql2')
+                    ->table('transaction_credit as c')
+                    ->leftJoin(DB::raw('(
+                        SELECT 
+                            rc.id as credit_id,
+                            SUM(r.amount) as repaid_amount
+                        FROM transaction_repayment r
+                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                        WHERE r.status = "SUCCESS"
+                        GROUP BY rc.id
+                    ) as r'), 'c.id', '=', 'r.credit_id')
+                    ->select([
+                        DB::raw('DATE(c.created_at) as date_label'),
+                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
+                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
+                        DB::raw('CASE 
+                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                        END as repayment_percentage')
+                    ])
+                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+                    ->whereIn('c.status', ['CREDIT', 'REPAID'])
+                    ->groupBy(DB::raw('DATE(c.created_at)'))
+                    ->orderBy('date_label');
+
+                $results = $query->get();
+
+                Log::info('Revenue summary query result', [
+                    'count' => $results->count(),
+                    'start_date' => $startDateTime,
+                    'end_date' => $endDateTime
+                ]);
+
+                return response()->json([
+                    'revenueData' => $results
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            Log::error('Error in revenueSummaryData: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'error' => 'An error occurred while fetching revenue summary data',
+                'details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    public function revenueDataOnly()
+    {
+        return view('admin.emergency_credit.revenue_data_only');
+    }
+
+    public function revenueDataOnlyData(Request $request)
+    {
+        try {
+            $cacheKey = 'emergency_credit_revenue_data_only_v2_' . md5(json_encode($request->all()));
+            
+            return Cache::remember($cacheKey, now()->addMinutes($this->cacheTime), function () use ($request) {
+                Log::info('Fetching revenue data only', ['filters' => $request->all()]);
+                
+                // Set date range
+                $startDate = $request->start_date ?? date('Y-m-01'); // Default to first day of current month
+                $endDate = $request->end_date ?? date('Y-m-t'); // Default to last day of current month
+                
+                $startDateTime = $startDate . ' 00:00:00';
+                $endDateTime = $endDate . ' 23:59:59';
+
+                // First, check what credit types exist in the database
+                $creditTypes = DB::connection('mysql2')
+                    ->table('transaction_credit')
+                    ->select('credit_type')
+                    ->distinct()
+                    ->whereBetween('created_at', [$startDateTime, $endDateTime])
+                    ->whereIn('status', ['CREDIT', 'REPAID'])
+                    ->pluck('credit_type')
+                    ->filter()
+                    ->values();
+
+                Log::info('Available credit types', ['types' => $creditTypes->toArray(), 'isEmpty' => $creditTypes->isEmpty()]);
+
+                // If no credit types found, return empty result with message
+                if ($creditTypes->isEmpty()) {
+                    Log::info('No credit types found for the specified date range - returning empty result');
+                    return response()->json([
+                        'revenueData' => [
+                            (object)[
+                                'date_label' => 'No Data Available',
+                                'total_credit' => '0.00',
+                                'total_paid' => '0.00',
+                                'repayment_percentage' => '0.00'
+                            ]
+                        ],
+                        'message' => 'No credit transactions found for the specified date range'
+                    ]);
+                }
+
+                // For now, let's use the same query as revenue summary but add a note that it's for "data only"
+                // This will show all credit types until we can determine the correct credit type structure
+                $query = DB::connection('mysql2')
+                    ->table('transaction_credit as c')
+                    ->leftJoin(DB::raw('(
+                        SELECT 
+                            rc.id as credit_id,
+                            SUM(r.amount) as repaid_amount
+                        FROM transaction_repayment r
+                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                        WHERE r.status = "SUCCESS"
+                        GROUP BY rc.id
+                    ) as r'), 'c.id', '=', 'r.credit_id')
+                    ->select([
+                        DB::raw('DATE(c.created_at) as date_label'),
+                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
+                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
+                        DB::raw('CASE 
+                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                        END as repayment_percentage')
+                    ])
+                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+                    ->whereIn('c.status', ['CREDIT', 'REPAID'])
+                    ->groupBy(DB::raw('DATE(c.created_at)'))
+                    ->orderBy(DB::raw('DATE(c.created_at)'));
+
+                // Get daily data
+                $dailyData = $query->get();
+
+                // Get grand total
+                $grandTotalQuery = DB::connection('mysql2')
+                    ->table('transaction_credit as c')
+                    ->leftJoin(DB::raw('(
+                        SELECT 
+                            rc.id as credit_id,
+                            SUM(r.amount) as repaid_amount
+                        FROM transaction_repayment r
+                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                        WHERE r.status = "SUCCESS"
+                        GROUP BY rc.id
+                    ) as r'), 'c.id', '=', 'r.credit_id')
+                    ->select([
+                        DB::raw('"Grand Total" as date_label'),
+                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
+                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
+                        DB::raw('CASE 
+                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                        END as repayment_percentage')
+                    ])
+                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+                    ->whereIn('c.status', ['CREDIT', 'REPAID']);
+
+                $grandTotal = $grandTotalQuery->first();
+                
+                // If no data found, create empty grand total
+                if (!$grandTotal || $grandTotal->total_credit === null) {
+                    $grandTotal = (object)[
+                        'date_label' => 'Grand Total',
+                        'total_credit' => '0.00',
+                        'total_paid' => '0.00',
+                        'repayment_percentage' => '0.00'
+                    ];
+                }
+
+                // Combine results
+                $results = $dailyData->concat(collect([$grandTotal]));
+
+                Log::info('Revenue data only query result', [
+                    'daily_count' => $dailyData->count(),
+                    'start_date' => $startDateTime,
+                    'end_date' => $endDateTime,
+                    'grand_total' => $grandTotal
+                ]);
+
+                return response()->json([
+                    'revenueData' => $results
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            Log::error('Error in revenueDataOnlyData: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'error' => 'An error occurred while fetching revenue data only',
+                'details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
+
+    public function revenueWithBalance()
+    {
+        return view('admin.emergency_credit.revenue_with_balance');
+    }
+
+    public function revenueWithBalanceData(Request $request)
+    {
+        try {
+            $cacheKey = 'emergency_credit_revenue_with_balance_' . md5(json_encode($request->all()));
+            
+            return Cache::remember($cacheKey, now()->addMinutes($this->cacheTime), function () use ($request) {
+                Log::info('Fetching revenue with balance data', ['filters' => $request->all()]);
+                
+                // Set date range
+                $startDate = $request->start_date ?? date('Y-m-d'); // Default to today
+                $endDate = $request->end_date ?? date('Y-m-d'); // Default to today
+                
+                $startDateTime = $startDate . ' 00:00:00';
+                $endDateTime = $endDate . ' 23:59:59';
+
+                // Query for revenue with balance (both minutes and data)
+                $query = DB::connection('mysql2')
+                    ->table('transaction_credit as c')
+                    ->leftJoin(DB::raw('(
+                        SELECT 
+                            rc.id as credit_id,
+                            SUM(r.amount) as repaid_amount
+                        FROM transaction_repayment r
+                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                        WHERE r.status = "SUCCESS"
+                        GROUP BY rc.id
+                    ) as r'), 'c.id', '=', 'r.credit_id')
+                    ->select([
+                        DB::raw('DATE_FORMAT(c.created_at, "%Y-%m-%d") as date_label'),
+                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
+                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
+                        DB::raw('ROUND((SUM(c.units_amount_to_pay) - SUM(COALESCE(r.repaid_amount, 0))) / 10000.0, 2) as balance'),
+                        DB::raw('CASE 
+                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                        END as repayment_percentage')
+                    ])
+                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
+                    ->whereIn('c.status', ['CREDIT', 'REPAID'])
+                    ->groupBy(DB::raw('DATE_FORMAT(c.created_at, "%Y-%m-%d")'))
+                    ->orderBy(DB::raw('DATE_FORMAT(c.created_at, "%Y-%m-%d")'));
+
+                $results = $query->get();
+
+                Log::info('Revenue with balance query result', [
+                    'count' => $results->count(),
+                    'start_date' => $startDateTime,
+                    'end_date' => $endDateTime
+                ]);
+
+                return response()->json([
+                    'revenueData' => $results
+                ]);
+            });
+
+        } catch (\Exception $e) {
+            Log::error('Error in revenueWithBalanceData: ' . $e->getMessage());
+            Log::error($e->getTraceAsString());
+            return response()->json([
+                'error' => 'An error occurred while fetching revenue with balance data',
+                'details' => config('app.debug') ? $e->getMessage() : null
+            ], 500);
+        }
+    }
 } 

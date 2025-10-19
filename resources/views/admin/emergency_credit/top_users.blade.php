@@ -25,7 +25,7 @@
                   <h5 class="m-b-10">Top Users Emergency Credit</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                   <li class="breadcrumb-item">Emergency Credit</li>
                   <li class="breadcrumb-item">Top Users</li>
                 </ul>
@@ -188,7 +188,7 @@
       function fetchData(params = {}) {
         showLoading();
         
-        const url = new URL('http://127.0.0.1:8000/emergency-credit/top-users/data');
+        const url = new URL('${window.location.origin}/emergency-credit/top-users/data');
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
         fetch(url)

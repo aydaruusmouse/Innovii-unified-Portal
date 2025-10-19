@@ -21,7 +21,7 @@
                   <h5 class="m-b-10">Dashboard Overview</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                   <li class="breadcrumb-item">Dashboard</li>
                 </ul>
               </div>

@@ -192,11 +192,15 @@
                 </span>
               </a>
               <div class="d-grid my-2">
-                <button class="btn btn-primary">
-                  <svg class="pc-icon me-2">
-                    <use xlink:href="#custom-logout-1-outline"></use></svg
-                  >Logout
-                </button>
+                <form method="POST" action="{{ route('admin.logout') }}">
+                  @csrf
+                  <button type="submit" class="btn btn-primary">
+                    <svg class="pc-icon me-2">
+                      <use xlink:href="#custom-logout-1-outline"></use>
+                    </svg>
+                    Logout
+                  </button>
+                </form>
               </div>
             </div>
           </div>

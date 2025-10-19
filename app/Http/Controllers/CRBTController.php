@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class CRBTController extends Controller
 {
@@ -53,6 +51,7 @@ class CRBTController extends Controller
         return view('admin.crbt.billing_charges');
     }
 
+    // Corporate CRBT Reports
     public function corporateInfo()
     {
         return view('admin.crbt.corporate_info');
@@ -63,8 +62,25 @@ class CRBTController extends Controller
         return view('admin.crbt.corporate_users');
     }
 
+    // Backup Reports
     public function backupReports()
     {
         return view('admin.crbt.backup_reports');
     }
-} 
+
+    // API Methods for AJAX
+    public function getDailyMISData()
+    {
+        return response()->json(['message' => 'Daily MIS data endpoint']);
+    }
+
+    public function getHourlyMISData()
+    {
+        return response()->json(['message' => 'Hourly MIS data endpoint']);
+    }
+
+    public function getInterfaceData()
+    {
+        return response()->json(['message' => 'Interface data endpoint']);
+    }
+}

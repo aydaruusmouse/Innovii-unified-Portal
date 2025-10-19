@@ -9,12 +9,12 @@
                 <div class="row align-items-center">
                     <div class="col-md-12">
                         <div class="page-header-title">
-                            <h5 class="m-b-10">@yield('page_title', 'CRBT Report')</h5>
+                            <h5 class="m-b-10">Status Cycle MIS</h5>
                         </div>
                         <ul class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
-                            <li class="breadcrumb-item"><a href="#!">CRBT Reports</a></li>
-                            <li class="breadcrumb-item" aria-current="page">@yield('page_title', 'CRBT Report')</li>
+                            <li class="breadcrumb-item">CRBT Reports</li>
+                            <li class="breadcrumb-item">Status Cycle</li>
                         </ul>
                     </div>
                 </div>
@@ -27,10 +27,10 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5>@yield('report_title', 'Report Details')</h5>
+                        <h5>Status Cycle MIS Report</h5>
                     </div>
                     <div class="card-body">
-                        @yield('report_content')
+                        <p>Status cycle MIS report will be displayed here.</p>
                     </div>
                 </div>
             </div>
@@ -38,4 +38,4 @@
         <!-- [ Main Content ] end -->
     </div>
 </div>
-@endsection 
+@endsection

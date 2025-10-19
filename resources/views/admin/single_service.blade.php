@@ -29,7 +29,7 @@
                   <h5 class="m-b-10">Subscription Analytics</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                   <li class="breadcrumb-item">SDF Reports</li>
                   <li class="breadcrumb-item">Subscription Analytics</li>
                 </ul>
@@ -348,7 +348,7 @@
           document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
           // Fetch data from API
-          fetch(`http://127.0.0.1:8000/api/v1/service-report?${new URLSearchParams(filters)}`, {
+          fetch(`${window.AppConfig.apiBaseUrl}/service-report?${new URLSearchParams(filters)}`, {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
@@ -610,7 +610,7 @@
           document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
 
           // Fetch data from API
-          fetch(`http://127.0.0.1:8000/api/v1/service-report?${new URLSearchParams(filters)}`, {
+          fetch(`${window.AppConfig.apiBaseUrl}/service-report?${new URLSearchParams(filters)}`, {
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'

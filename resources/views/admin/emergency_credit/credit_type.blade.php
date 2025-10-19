@@ -26,7 +26,7 @@
                   <h5 class="m-b-10">Emergency Credit Types</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                   <li class="breadcrumb-item">Emergency Credit</li>
                   <li class="breadcrumb-item">Credit Types</li>
                 </ul>
@@ -245,7 +245,7 @@
         
         console.log('Request parameters:', params);
         
-        const url = new URL('http://127.0.0.1:8000/emergency-credit/credit-type/data');
+        const url = new URL('${window.location.origin}/emergency-credit/credit-type/data');
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
         console.log('Request URL:', url.toString());

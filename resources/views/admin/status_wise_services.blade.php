@@ -25,7 +25,7 @@
                 <h1 class="h3 mb-0 text-gray-800">Service Status Report</h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active" aria-current="page">Service Status Report</li>
                     </ol>
                 </nav>

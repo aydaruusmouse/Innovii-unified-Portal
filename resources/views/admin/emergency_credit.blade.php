@@ -23,7 +23,7 @@
                 </div>
                 <div class="col-md-12">
                   <ul class="breadcrumb mb-0">
-                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                     <li class="breadcrumb-item" aria-current="page">Emergency Credit</li>
                   </ul>
                 </div>

@@ -1,101 +1,49 @@
 <?php
+
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User; // Assuming UserProfile model for storing user data
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 
 class AuthController extends Controller
 {
     public function showLoginForm()
     {
-        return view('admin.login');
-    }
-
-    public function showRegistrationForm()
-    {
-        return view('admin.register');
-    }
-    public function register(Request $request)
-    {
-        Log::info('Controller reached');
-
-        Log::info('Incoming Request', $request->all());
-
-        // Validate input
-        try {
-            $validatedData = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'username' => 'required|string|max:255|unique:users',
-                'email' => 'required|email|unique:users,email',
-                'password' => 'required|confirmed|min:8',
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::error('Validation failed', ['errors' => $e->errors()]);
-            return back()->withErrors($e->errors())->withInput();
+        if (Auth::check()) {
+            return redirect()->intended('/dashboard');
         }
-        
-        // Combine first and last name
-        $name = "{$request->first_name} {$request->last_name}";
+        return view('admin.auth.login');
+    }
 
-        Log::info('User registration data', [
-            'name' => $name,
-            'email' => $request->email,
-            'username' => $request->username
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'username' => ['required','string'],
+            'password' => ['required'],
         ]);
 
-        // Create user with hashed password
-        try {
-            $user = User::create([
-                'name' => $name,
-                'username' => $request->username,
-                'email' => $request->email,
-                'password' => Hash::make($request->password),
-            ]);
+        $remember = (bool) $request->boolean('remember');
 
-            Log::info('User created successfully', ['user_id' => $user->id]);
-        } catch (\Exception $e) {
-            Log::error('User creation failed: ' . $e->getMessage());
-            return back()->withErrors(['error' => 'User registration failed.'])->withInput();
+        if (Auth::attempt($credentials, $remember)) {
+            $request->session()->regenerate();
+            Log::info('Admin login success', ['user_id' => Auth::id()]);
+            return redirect()->intended('/dashboard');
         }
 
-        // Log the user in
-        Auth::login($user);
-
-        Log::info('User logged in', ['user_id' => $user->id]);
-
-        // Redirect to the admin1 home page
-        return redirect('/admin1/');
-    }
-    
-    
-    
-
-public function login(Request $request)
-{
-    // Validate the input data
-    $credentials = $request->validate([
-        'username' => 'required|string',
-        'password' => 'required',
-    ]);
-
-    // Attempt to log in
-    if (Auth::attempt(['username' => $credentials['username'], 'password' => $credentials['password']], $request->remember)) {
-        // Authentication was successful
-        return redirect('/admin1/'); 
+        Log::warning('Admin login failed', ['username' => $request->input('username')]);
+        return back()->withErrors([
+            'username' => 'The provided credentials do not match our records.',
+        ])->onlyInput('username');
     }
 
-    // Authentication failed
-    return back()->withErrors(['username' => 'Invalid username or password']);
-}
-
-    public function logout()
+    public function logout(Request $request)
     {
         Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
         return redirect()->route('admin.login');
     }
 }

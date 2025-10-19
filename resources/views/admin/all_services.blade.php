@@ -28,7 +28,7 @@
                   <h5 class="m-b-10">Service Overview</h5>
                 </div>
                 <ul class="breadcrumb">
-                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Home</a></li>
+                  <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
                   <li class="breadcrumb-item">SDF Reports</li>
                   <li class="breadcrumb-item">Service Overview</li>
                 </ul>
@@ -211,19 +211,15 @@
         // Fetch the offers data from the backend
         function fetchOffersData(page = 1) {
             console.log('Fetching offers data for page:', page);
-            const url = new URL('http://127.0.0.1:8000/api/v1/offers');
+            // Use helper function to build API URL (ensure absolute URL for URL API)
+            const url = new URL(window.buildApiUrl('offers'), window.location.origin);
             url.searchParams.append('page', page);
             if (searchQuery) {
                 url.searchParams.append('search', searchQuery);
             }
 
-            fetch(url, {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'same-origin'
-            })
+            // Use helper function for API request
+            window.apiRequest(url)
                 .then(response => {
                     if (!response.ok) {
                         return response.json().then(errorData => {

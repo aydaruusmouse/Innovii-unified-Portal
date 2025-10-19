@@ -1,5 +1,5 @@
 <li class="pc-item">
-  <a href="/admin1" class="pc-link">
+  <a href="/dashboard" class="pc-link">
     <span class="pc-micon">
       <i data-feather="home"></i>
     </span>
@@ -184,9 +184,17 @@
     <li class="pc-item">
       <a href="{{ route('emergency_credit.credit_type') }}" class="pc-link" style="font-size: 14px;">Credit Type Analysis</a>
     </li>
-  </ul>
-</li>
-
-
+    <li class="pc-item pc-caption">
+      <label style="font-size: 12px; color: #666;">Revenue Reports</label>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('emergency_credit.revenue_summary') }}" class="pc-link" style="font-size: 14px;">Revenue Summary (All)</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('emergency_credit.revenue_data_only') }}" class="pc-link" style="font-size: 14px;">Revenue Data Only</a>
+    </li>
+    <li class="pc-item">
+      <a href="{{ route('emergency_credit.revenue_with_balance') }}" class="pc-link" style="font-size: 14px;">Revenue with Balance</a>
+    </li>
   </ul>
 </li>

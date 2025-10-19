@@ -25,7 +25,7 @@
                 <h1 class="h3 mb-0 text-gray-800">Overall Subscriber Report</h1>
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-0">
-                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Dashboard</a></li>
                         <li class="breadcrumb-item active" aria-current="page">Overall Subscriber Report</li>
                     </ol>
                 </nav>

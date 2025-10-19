@@ -15,3 +15,6 @@
 
 <!-- [Favicon] icon -->
 <link rel="icon" href="../assets/images/favicon.svg" type="image/x-icon" />
+
+<!-- Global App Configuration -->
+@include('layouts.config')
