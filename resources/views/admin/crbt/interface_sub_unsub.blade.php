@@ -1,41 +1,104 @@
-@extends('layouts.layout_vertical')
+@extends('admin.crbt.base')
 
-@section('content')
-<div class="pc-container">
-    <div class="pc-content">
-        <!-- [ breadcrumb ] start -->
-        <div class="page-header">
-            <div class="page-block">
-                <div class="row align-items-center">
-                    <div class="col-md-12">
-                        <div class="page-header-title">
-                            <h5 class="m-b-10">Interface-wise Sub/Unsub</h5>
-                        </div>
-                        <ul class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
-                            <li class="breadcrumb-item">CRBT Reports</li>
-                            <li class="breadcrumb-item">Interface Sub/Unsub</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- [ breadcrumb ] end -->
+@section('page_title', 'Interface-wise Sub/Unsub')
+@section('report_title', 'Interface-wise Subscription/Unsubscription')
 
-        <!-- [ Main Content ] start -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Interface-wise Subscription/Unsubscription Report</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Interface-wise subscription and unsubscription report will be displayed here.</p>
-                    </div>
-                </div>
-            </div>
+@section('report_content')
+<div class="row g-3 mb-3">
+    <div class="col-md-4"><input type="date" id="startDate" class="form-control" placeholder="Start date"></div>
+    <div class="col-md-4"><input type="date" id="endDate" class="form-control" placeholder="End date"></div>
+    <div class="col-md-4 d-grid"><button id="applyFilter" class="btn btn-primary">Apply Filter</button></div>
+    </div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Interface</th>
+                <th>Total Subscriptions</th>
+                <th>Total Unsubscriptions</th>
+                <th>Total Tone Usage</th>
+            </tr>
+        </thead>
+        <tbody id="interfaceBody">
+            <tr><td colspan="4" class="text-center">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Top Interfaces by Subscriptions</h5></div>
+            <div class="card-body"><canvas id="subsChart"></canvas></div>
         </div>
-        <!-- [ Main Content ] end -->
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header"><h5>Tone Usage by Interface</h5></div>
+            <div class="card-body"><canvas id="tonesChart"></canvas></div>
+        </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let subsChart, tonesChart;
+
+    function initCharts(labels=[], subs=[], tones=[]) {
+        const sctx = document.getElementById('subsChart').getContext('2d');
+        const tctx = document.getElementById('tonesChart').getContext('2d');
+        if (subsChart) subsChart.destroy();
+        if (tonesChart) tonesChart.destroy();
+        subsChart = new Chart(sctx, { type:'bar', data:{ labels, datasets:[{ label:'Subscriptions', data:subs, backgroundColor:'rgba(13,110,253,.6)' }] }, options:{ responsive:true, maintainAspectRatio:false } });
+        tonesChart = new Chart(tctx, { type:'bar', data:{ labels, datasets:[{ label:'Tone Usage', data:tones, backgroundColor:'rgba(25,135,84,.6)' }] }, options:{ responsive:true, maintainAspectRatio:false } });
+    }
+
+    async function fetchInterface() {
+        const params = new URLSearchParams();
+        const s = document.getElementById('startDate').value;
+        const e = document.getElementById('endDate').value;
+        if (s) params.append('start_date', s);
+        if (e) params.append('end_date', e);
+        const url = `/api/crbt/interface-data?${params.toString()}`;
+        const tbody = document.getElementById('interfaceBody');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            const rows = Array.isArray(json.data) ? json.data : [];
+            if (rows.length===0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center">No data</td></tr>';
+                initCharts();
+                return;
+            }
+            tbody.innerHTML = '';
+            const labels=[], subs=[], tones=[];
+            rows.forEach(r=>{
+                labels.push(r.interface_name || 'N/A');
+                subs.push(Number(r.total_subscriptions||0));
+                const unsubs = Number(r.total_unsubscriptions||0);
+                tones.push(Number(r.total_tone_usage||0));
+                tbody.insertAdjacentHTML('beforeend', `
+                    <tr>
+                        <td>${r.interface_name}</td>
+                        <td>${r.total_subscriptions}</td>
+                        <td>${unsubs}</td>
+                        <td>${r.total_tone_usage}</td>
+                    </tr>
+                `);
+            });
+            initCharts(labels, subs, tones);
+        } catch(e) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-danger text-center">Error loading data</td></tr>';
+            initCharts();
+        }
+    }
+
+    document.getElementById('applyFilter').addEventListener('click', fetchInterface);
+    fetchInterface();
+});
+</script>
+@endpush
 @endsection
