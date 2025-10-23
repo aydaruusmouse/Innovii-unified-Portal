@@ -1,41 +1,288 @@
-@extends('layouts.layout_vertical')
+@extends('admin.crbt.base')
 
-@section('content')
-<div class="pc-container">
-    <div class="pc-content">
-        <!-- [ breadcrumb ] start -->
-        <div class="page-header">
-            <div class="page-block">
-                <div class="row align-items-center">
-                    <div class="col-md-12">
-                        <div class="page-header-title">
-                            <h5 class="m-b-10">Interface-wise Tone Usage</h5>
-                        </div>
-                        <ul class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
-                            <li class="breadcrumb-item">CRBT Reports</li>
-                            <li class="breadcrumb-item">Interface Tone</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- [ breadcrumb ] end -->
+@section('page_title', 'Interface-wise Tone Usage')
+@section('report_title', 'Interface-wise Tone Usage Report')
 
-        <!-- [ Main Content ] start -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Interface-wise Tone Usage Report</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Interface-wise tone usage report will be displayed here.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- [ Main Content ] end -->
+@section('report_content')
+<!-- Filter Section -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="date" id="startDate" class="form-control" placeholder="Start date">
+    </div>
+    <div class="col-md-4">
+        <input type="date" id="endDate" class="form-control" placeholder="End date">
+    </div>
+    <div class="col-md-4 d-grid">
+        <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
     </div>
 </div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Total Tone Usage</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalToneUsage">
+                    <i class="feather icon-music text-primary f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Active Interfaces</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="activeInterfaces">
+                    <i class="feather icon-activity text-success f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Top Interface</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="topInterface">
+                    <i class="feather icon-trending-up text-warning f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Average Usage</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="averageUsage">
+                    <i class="feather icon-bar-chart-2 text-info f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Interface-wise Tone Usage Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Interface Name</th>
+                                <th>Total Tone Usage</th>
+                                <th>Date Range</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="interfaceToneBody">
+                            <tr><td colspan="4" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Interface Tone pagination" class="mt-3">
+                    <ul class="pagination justify-content-center" id="interfaceTonePagination">
+                        <!-- Pagination will be generated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Tone Usage by Interface</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="toneUsageChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Interface Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="interfacePerformanceChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let toneUsageChart, interfacePerformanceChart;
+        let currentPage = 1;
+        let totalPages = 1;
+        let perPage = 10;
+
+        function initCharts(labels = [], toneUsage = [], performance = []) {
+            const toneCtx = document.getElementById('toneUsageChart').getContext('2d');
+            const perfCtx = document.getElementById('interfacePerformanceChart').getContext('2d');
+
+            if (toneUsageChart) toneUsageChart.destroy();
+            if (interfacePerformanceChart) interfacePerformanceChart.destroy();
+
+            toneUsageChart = new Chart(toneCtx, {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Tone Usage', data: toneUsage, backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            interfacePerformanceChart = new Chart(perfCtx, {
+                type: 'doughnut',
+                data: { labels, datasets: [{ label: 'Performance', data: performance, backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        async function fetchInterfaceToneData(page = 1) {
+            currentPage = page;
+            const params = new URLSearchParams();
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            if (s) params.append('start_date', s);
+            if (e) params.append('end_date', e);
+            params.append('page', page);
+            params.append('per_page', perPage);
+
+            const url = `/api/crbt/interface-tone?${params.toString()}`;
+            const tbody = document.getElementById('interfaceToneBody');
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                const rows = Array.isArray(json.data) ? json.data : [];
+                const pagination = json.pagination || {};
+                
+                // Update pagination info
+                totalPages = pagination.last_page || 1;
+                currentPage = pagination.current_page || 1;
+
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No data</td></tr>';
+                    
+                    // Update summary cards to show 0 when no data
+                    document.getElementById('totalToneUsage').querySelector('span').textContent = '0';
+                    document.getElementById('activeInterfaces').querySelector('span').textContent = '0';
+                    document.getElementById('topInterface').querySelector('span').textContent = 'N/A';
+                    document.getElementById('averageUsage').querySelector('span').textContent = '0';
+                    
+                    initCharts();
+                    generatePagination();
+                    return;
+                }
+
+                const labels = [];
+                const toneUsage = [];
+                const performance = [];
+                let totalUsage = 0;
+                tbody.innerHTML = '';
+
+                rows.forEach(r => {
+                    console.log('Interface tone row:', r);
+                    const interfaceName = r.interface || r.INTERFACE || 'Unknown';
+                    const usage = Number(r.total_tone_usage || 0);
+                    
+                    labels.push(interfaceName);
+                    toneUsage.push(usage);
+                    performance.push(usage);
+                    totalUsage += usage;
+                    
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${interfaceName}</td>
+                            <td>${usage.toLocaleString()}</td>
+                            <td>${r.start_date || 'N/A'} to ${r.end_date || 'N/A'}</td>
+                            <td>${totalUsage > 0 ? ((usage / totalUsage) * 100).toFixed(2) : 0}%</td>
+                        </tr>
+                    `);
+                });
+
+                // Update summary cards
+                document.getElementById('totalToneUsage').querySelector('span').textContent = totalUsage.toLocaleString();
+                document.getElementById('activeInterfaces').querySelector('span').textContent = rows.length;
+                document.getElementById('topInterface').querySelector('span').textContent = labels[0] || 'N/A';
+                document.getElementById('averageUsage').querySelector('span').textContent = rows.length > 0 ? Math.round(totalUsage / rows.length).toLocaleString() : '0';
+
+                // Generate pagination controls
+                generatePagination();
+
+                initCharts(labels, toneUsage, performance);
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-danger text-center">Error loading data</td></tr>`;
+                initCharts();
+            }
+        }
+
+        function generatePagination() {
+            const paginationContainer = document.getElementById('interfaceTonePagination');
+            if (!paginationContainer) return;
+
+            let paginationHTML = '';
+
+            // Previous button
+            if (currentPage > 1) {
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+            } else {
+                paginationHTML += `<li class="page-item disabled"><span class="page-link">Previous</span></li>`;
+            }
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    paginationHTML += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+                } else {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+            }
+
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+            } else {
+                paginationHTML += `<li class="page-item disabled"><span class="page-link">Next</span></li>`;
+            }
+
+            paginationContainer.innerHTML = paginationHTML;
+
+            // Add event listeners to pagination links
+            paginationContainer.querySelectorAll('a[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    fetchInterfaceToneData(page);
+                });
+            });
+        }
+
+        document.getElementById('applyFilter').addEventListener('click', function() {
+            console.log('Apply Filter button clicked for Interface Tone');
+            fetchInterfaceToneData(1); // Reset to first page when filtering
+        });
+        console.log('Initial interface tone data load');
+        fetchInterfaceToneData();
+    });
+</script>
+@endpush
 @endsection

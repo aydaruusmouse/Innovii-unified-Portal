@@ -4,6 +4,8 @@
   <head>
     @include('layouts.heads_page') 
     @include('layouts.heads_css')
+    @include('layouts.config')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Bootstrap Icons -->
@@ -124,7 +126,10 @@
       let revenueData = [];
 
       document.addEventListener('DOMContentLoaded', function() {
-        loadRevenueData();
+        // Add a small delay to ensure server is ready
+        setTimeout(() => {
+          loadRevenueData();
+        }, 1000); // 1 second delay
         
         // Add form submit event listener
         document.getElementById('filterForm').addEventListener('submit', function(e) {
@@ -133,33 +138,158 @@
         });
       });
 
-      function loadRevenueData() {
+      // Health check function to test server availability
+      async function checkServerHealth(endpoint) {
+        try {
+          const response = await fetchWithTimeout(endpoint, {
+            method: 'HEAD', // Just check if server responds
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          }, 3000); // 3 second timeout for health check
+          return response.ok;
+        } catch (error) {
+          return false;
+        }
+      }
+
+      // Robust API request function with multiple fallback strategies
+      async function loadRevenueData() {
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
         
-        fetch(`${window.AppConfig.apiBaseUrl}/emergency-credit/revenue-with-balance/data?${params}`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              console.error('Error:', data.error);
-              return;
+        // Show loading state
+        document.getElementById('summaryCards').innerHTML = '<div class="col-md-12"><div class="alert alert-info">Loading data...</div></div>';
+        
+        // Try multiple API endpoints in order of preference
+        const apiEndpoints = [
+          `${window.location.origin}/api/v1/emergency-credit/revenue-with-balance/data`,
+          `http://127.0.0.1:8000/api/v1/emergency-credit/revenue-with-balance/data`,
+          `http://127.0.0.1:8007/api/v1/emergency-credit/revenue-with-balance/data`
+        ];
+        
+        let lastError = null;
+        
+        for (let i = 0; i < apiEndpoints.length; i++) {
+          try {
+            const endpoint = apiEndpoints[i];
+            const apiUrl = new URL(endpoint);
+            Object.keys(Object.fromEntries(params)).forEach(key => {
+              apiUrl.searchParams.append(key, params.get(key));
+            });
+            
+            console.log(`Trying API endpoint ${i + 1}/${apiEndpoints.length}:`, apiUrl.toString());
+            
+            // Add exponential backoff delay for retries
+            if (i > 0) {
+              const delay = Math.pow(2, i) * 1000; // 2s, 4s, 8s delays
+              console.log(`Waiting ${delay}ms before retry...`);
+              await new Promise(resolve => setTimeout(resolve, delay));
             }
             
-            revenueData = data.revenueData;
+            const response = await fetch(apiUrl.toString(), {
+              method: 'GET',
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              credentials: 'same-origin'
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const data = await response.json();
+            console.log('API Response received:', data);
+            
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            if (!data.revenueData || data.revenueData.length === 0) {
+              console.log('No revenue data found');
+              revenueData = [];
+            } else {
+              revenueData = data.revenueData;
+              console.log('Successfully loaded revenue data:', revenueData.length, 'records');
+            }
+            
             updateSummaryCards();
             updateChart();
             updateTable();
+            return; // Success, exit the function
+            
+          } catch (error) {
+            console.error(`API endpoint ${i + 1} failed:`, error.message);
+            lastError = error;
+            
+            // If it's a connection refused error, try next endpoint immediately
+            if (error.message.includes('Failed to fetch') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+              console.log('Connection refused, trying next endpoint...');
+              continue;
+            }
+            
+            // For timeout errors, add a small delay before trying next endpoint
+            if (error.message.includes('timeout')) {
+              console.log('Timeout occurred, waiting before next attempt...');
+              await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+            
+            continue; // Try next endpoint
+          }
+        }
+        
+        // All endpoints failed
+        console.error('All API endpoints failed. Last error:', lastError);
+        document.getElementById('summaryCards').innerHTML = `
+          <div class="col-md-12">
+            <div class="alert alert-danger">
+              <h5>Unable to load data</h5>
+              <p>All API endpoints failed. Last error: ${lastError ? lastError.message : 'Unknown error'}</p>
+              <button class="btn btn-sm btn-outline-danger" onclick="loadRevenueData()">Retry</button>
+            </div>
+          </div>
+        `;
+      }
+      
+      // Fetch with timeout utility function
+      function fetchWithTimeout(url, options = {}, timeout = 10000) {
+        return new Promise((resolve, reject) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => {
+            controller.abort();
+            reject(new Error(`Request timeout after ${timeout}ms`));
+          }, timeout);
+          
+          fetch(url, {
+            ...options,
+            signal: controller.signal
+          })
+          .then(response => {
+            clearTimeout(timeoutId);
+            resolve(response);
           })
           .catch(error => {
-            console.error('Error fetching revenue data:', error);
+            clearTimeout(timeoutId);
+            reject(error);
           });
+        });
       }
 
       function updateSummaryCards() {
+        console.log('updateSummaryCards called with revenueData:', revenueData);
+        console.log('revenueData length:', revenueData ? revenueData.length : 'undefined');
+        
         if (!revenueData || revenueData.length === 0) {
+          console.log('No data available - showing alert');
           document.getElementById('summaryCards').innerHTML = '<div class="col-md-12"><div class="alert alert-info">No data available</div></div>';
           return;
         }
+        
+        console.log('Processing revenue data for summary cards');
 
         const totalCredit = revenueData.reduce((sum, item) => sum + parseFloat(item.total_credit), 0);
         const totalPaid = revenueData.reduce((sum, item) => sum + parseFloat(item.total_paid), 0);
@@ -290,23 +420,42 @@
 
         revenueData.forEach(item => {
           const row = document.createElement('tr');
-          const balance = parseFloat(item.balance);
-          
-          // Highlight rows with high balance
-          if (balance > 0) {
-            row.className = 'table-warning';
-          }
           
           row.innerHTML = `
             <td>${item.date_label}</td>
             <td>${parseFloat(item.total_credit).toFixed(2)}</td>
             <td>${parseFloat(item.total_paid).toFixed(2)}</td>
-            <td class="${balance > 0 ? 'text-warning fw-bold' : ''}">${balance.toFixed(2)}</td>
+            <td>${parseFloat(item.balance).toFixed(2)}</td>
             <td>${parseFloat(item.repayment_percentage).toFixed(2)}%</td>
           `;
           tbody.appendChild(row);
         });
       }
+
+      // Test function - you can call this in browser console: testAPI()
+      window.testAPI = function() {
+        console.log('Testing API directly...');
+        fetch('http://127.0.0.1:8000/api/v1/emergency-credit/revenue-with-balance/data?start_date=2025-01-01&end_date=2025-02-01')
+          .then(response => {
+            console.log('Direct API test - Status:', response.status);
+            return response.json();
+          })
+          .then(data => {
+            console.log('Direct API test - Data:', data);
+          })
+          .catch(error => {
+            console.error('Direct API test - Error:', error);
+          });
+      };
+
+      // Simple test function
+      window.simpleTest = function() {
+        console.log('Simple test starting...');
+        fetch('http://127.0.0.1:8000/api/v1/emergency-credit/revenue-with-balance/data?start_date=2025-01-01&end_date=2025-02-01')
+          .then(r => r.text())
+          .then(text => console.log('Raw response:', text))
+          .catch(e => console.error('Simple test error:', e));
+      };
 
       function exportToExcel() {
         if (!revenueData || revenueData.length === 0) {

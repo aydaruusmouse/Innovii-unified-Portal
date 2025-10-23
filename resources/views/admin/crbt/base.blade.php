@@ -3,6 +3,10 @@
   <head>
     @include('layouts.heads_page')
     @include('layouts.heads_css')
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   </head>
   <body @@bodySetup>
     @include('layouts.layout_vertical')

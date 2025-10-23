@@ -7,6 +7,8 @@
 <script src="{{ asset('admin/assets/js/theme.js') }}"></script>
 <script src="{{ asset('admin/assets/js/plugins/feather.min.js') }}"></script>
 
+@stack('scripts')
+
 {{-- if (pc_dark_layout == 'default') {
 <script>
   if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {

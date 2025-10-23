@@ -1,41 +1,321 @@
-@extends('layouts.layout_vertical')
+@extends('admin.crbt.base')
 
-@section('content')
-<div class="pc-container">
-    <div class="pc-content">
-        <!-- [ breadcrumb ] start -->
-        <div class="page-header">
-            <div class="page-block">
-                <div class="row align-items-center">
-                    <div class="col-md-12">
-                        <div class="page-header-title">
-                            <h5 class="m-b-10">Status Cycle MIS</h5>
-                        </div>
-                        <ul class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.simple') }}">Home</a></li>
-                            <li class="breadcrumb-item">CRBT Reports</li>
-                            <li class="breadcrumb-item">Status Cycle</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- [ breadcrumb ] end -->
+@section('page_title', 'Status Cycle MIS')
+@section('report_title', 'Status Cycle MIS Report')
 
-        <!-- [ Main Content ] start -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Status Cycle MIS Report</h5>
-                    </div>
-                    <div class="card-body">
-                        <p>Status cycle MIS report will be displayed here.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- [ Main Content ] end -->
+@section('report_content')
+<!-- Filter Section -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="date" id="startDate" class="form-control" placeholder="Start date">
+    </div>
+    <div class="col-md-4">
+        <input type="date" id="endDate" class="form-control" placeholder="End date">
+    </div>
+    <div class="col-md-4 d-grid">
+        <button id="applyFilter" class="btn btn-primary">Apply Filter</button>
     </div>
 </div>
+
+<!-- Summary Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Total Active</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalActive">
+                    <i class="feather icon-check-circle text-success f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Total Grace</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalGrace">
+                    <i class="feather icon-clock text-warning f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Total Suspended</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalSuspended">
+                    <i class="feather icon-pause-circle text-danger f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Total Churned</h6>
+                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalChurned">
+                    <i class="feather icon-x-circle text-secondary f-24 m-r-5"></i>
+                    <span>Loading...</span>
+                </h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusDistributionChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Status Trends</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusTrendsChart" style="height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Status Cycle MIS Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Active Base</th>
+                                <th>Grace Base</th>
+                                <th>Suspend Base</th>
+                                <th>VChurn Base</th>
+                                <th>InvChurn Base</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusCycleBody">
+                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                <nav aria-label="Status Cycle pagination" class="mt-3">
+                    <ul class="pagination justify-content-center" id="statusCyclePagination">
+                        <!-- Pagination will be generated by JavaScript -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        let statusDistributionChart, statusTrendsChart;
+        let currentPage = 1;
+        let totalPages = 1;
+        let perPage = 10;
+
+        function initCharts(labels = [], activeData = [], graceData = [], suspendData = []) {
+            const distCtx = document.getElementById('statusDistributionChart').getContext('2d');
+            const trendCtx = document.getElementById('statusTrendsChart').getContext('2d');
+
+            if (statusDistributionChart) statusDistributionChart.destroy();
+            if (statusTrendsChart) statusTrendsChart.destroy();
+
+            // Status Distribution (Doughnut Chart)
+            statusDistributionChart = new Chart(distCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Active', 'Grace', 'Suspended', 'Churned'],
+                    datasets: [{
+                        data: [
+                            activeData.reduce((a, b) => a + b, 0),
+                            graceData.reduce((a, b) => a + b, 0),
+                            suspendData.reduce((a, b) => a + b, 0),
+                            activeData.reduce((a, b) => a + b, 0) * 0.1 // Estimated churn
+                        ],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Status Trends (Line Chart)
+            statusTrendsChart = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Active', data: activeData, borderColor: '#28a745', tension: 0.1 },
+                        { label: 'Grace', data: graceData, borderColor: '#ffc107', tension: 0.1 },
+                        { label: 'Suspended', data: suspendData, borderColor: '#dc3545', tension: 0.1 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        async function fetchStatusCycleData(page = 1) {
+            currentPage = page;
+            const params = new URLSearchParams();
+            const s = document.getElementById('startDate').value;
+            const e = document.getElementById('endDate').value;
+            if (s) params.append('start_date', s);
+            if (e) params.append('end_date', e);
+            params.append('page', page);
+            params.append('per_page', perPage);
+
+            const url = `/api/crbt/status-cycle?${params.toString()}`;
+            const tbody = document.getElementById('statusCycleBody');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+
+            try {
+                const res = await fetch(url);
+                const json = await res.json();
+                const rows = Array.isArray(json.data) ? json.data : [];
+                const pagination = json.pagination || {};
+                
+                // Update pagination info
+                totalPages = pagination.last_page || 1;
+                currentPage = pagination.current_page || 1;
+
+                if (rows.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data</td></tr>';
+                    
+                    // Update summary cards to show 0 when no data
+                    document.getElementById('totalActive').querySelector('span').textContent = '0';
+                    document.getElementById('totalGrace').querySelector('span').textContent = '0';
+                    document.getElementById('totalSuspended').querySelector('span').textContent = '0';
+                    document.getElementById('totalChurned').querySelector('span').textContent = '0';
+                    
+                    initCharts();
+                    generatePagination();
+                    return;
+                }
+
+                const labels = [];
+                const activeData = [];
+                const graceData = [];
+                const suspendData = [];
+                let totalActive = 0, totalGrace = 0, totalSuspend = 0, totalChurn = 0;
+                tbody.innerHTML = '';
+
+                rows.forEach(r => {
+                    const date = r.date || r.DATE || '';
+                    const active = Number(r.activeBase || 0);
+                    const grace = Number(r.graceBase || 0);
+                    const suspend = Number(r.suspendBase || 0);
+                    const vchurn = Number(r.vchurnBase || 0);
+                    const invchurn = Number(r.invchurnBase || 0);
+                    
+                    labels.push(date);
+                    activeData.push(active);
+                    graceData.push(grace);
+                    suspendData.push(suspend);
+                    
+                    totalActive += active;
+                    totalGrace += grace;
+                    totalSuspend += suspend;
+                    totalChurn += vchurn + invchurn;
+                    
+                    tbody.insertAdjacentHTML('beforeend', `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${active.toLocaleString()}</td>
+                            <td>${grace.toLocaleString()}</td>
+                            <td>${suspend.toLocaleString()}</td>
+                            <td>${vchurn.toLocaleString()}</td>
+                            <td>${invchurn.toLocaleString()}</td>
+                        </tr>
+                    `);
+                });
+
+                // Update summary cards
+                document.getElementById('totalActive').querySelector('span').textContent = totalActive.toLocaleString();
+                document.getElementById('totalGrace').querySelector('span').textContent = totalGrace.toLocaleString();
+                document.getElementById('totalSuspended').querySelector('span').textContent = totalSuspend.toLocaleString();
+                document.getElementById('totalChurned').querySelector('span').textContent = totalChurn.toLocaleString();
+
+                // Generate pagination controls
+                generatePagination();
+
+                initCharts(labels, activeData, graceData, suspendData);
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">Error loading data</td></tr>`;
+                initCharts();
+            }
+        }
+
+        function generatePagination() {
+            const paginationContainer = document.getElementById('statusCyclePagination');
+            if (!paginationContainer) return;
+
+            let paginationHTML = '';
+
+            // Previous button
+            if (currentPage > 1) {
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
+            } else {
+                paginationHTML += `<li class="page-item disabled"><span class="page-link">Previous</span></li>`;
+            }
+
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                if (i === currentPage) {
+                    paginationHTML += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+                } else {
+                    paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`;
+                }
+            }
+
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}">Next</a></li>`;
+            } else {
+                paginationHTML += `<li class="page-item disabled"><span class="page-link">Next</span></li>`;
+            }
+
+            paginationContainer.innerHTML = paginationHTML;
+
+            // Add event listeners to pagination links
+            paginationContainer.querySelectorAll('a[data-page]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = parseInt(this.getAttribute('data-page'));
+                    fetchStatusCycleData(page);
+                });
+            });
+        }
+
+        document.getElementById('applyFilter').addEventListener('click', function() {
+            console.log('Apply Filter button clicked for Status Cycle');
+            fetchStatusCycleData(1); // Reset to first page when filtering
+        });
+        console.log('Initial status cycle data load');
+        fetchStatusCycleData();
+    });
+</script>
+@endpush
 @endsection

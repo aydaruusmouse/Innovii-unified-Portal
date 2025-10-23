@@ -10,22 +10,7 @@
     <div class="col-md-4 d-grid"><button id="applyFilter" class="btn btn-primary">Apply Filter</button></div>
     </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-bordered">
-        <thead>
-            <tr>
-                <th>Interface</th>
-                <th>Total Subscriptions</th>
-                <th>Total Unsubscriptions</th>
-                <th>Total Tone Usage</th>
-            </tr>
-        </thead>
-        <tbody id="interfaceBody">
-            <tr><td colspan="4" class="text-center">Loading...</td></tr>
-        </tbody>
-    </table>
-</div>
-
+<!-- Charts Section -->
 <div class="row mt-4">
     <div class="col-md-6">
         <div class="card">
@@ -39,6 +24,23 @@
             <div class="card-body"><canvas id="tonesChart"></canvas></div>
         </div>
     </div>
+</div>
+
+<!-- Data Table -->
+<div class="table-responsive mt-4">
+    <table class="table table-striped table-bordered">
+        <thead>
+            <tr>
+                <th>Interface</th>
+                <th>Total Subscriptions</th>
+                <th>Total Unsubscriptions</th>
+                <th>Total Tone Usage</th>
+            </tr>
+        </thead>
+        <tbody id="interfaceBody">
+            <tr><td colspan="4" class="text-center">Loading...</td></tr>
+        </tbody>
+    </table>
 </div>
 
 @push('scripts')
@@ -68,6 +70,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const res = await fetch(url);
             const json = await res.json();
             const rows = Array.isArray(json.data) ? json.data : [];
+            
+            // Process the data
+            
             if (rows.length===0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="text-center">No data</td></tr>';
                 initCharts();
@@ -75,17 +80,25 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             tbody.innerHTML = '';
             const labels=[], subs=[], tones=[];
-            rows.forEach(r=>{
-                labels.push(r.interface_name || 'N/A');
-                subs.push(Number(r.total_subscriptions||0));
-                const unsubs = Number(r.total_unsubscriptions||0);
-                tones.push(Number(r.total_tone_usage||0));
+            rows.forEach((r) => {
+                // Extract data from the row - ensure we have the correct field names
+                const interfaceName = r.interface || r.interface_name || 'Unknown';
+                const subscriptions = r.total_subscriptions || 0;
+                const unsubscriptions = r.total_unsubscriptions || 0;
+                const toneUsage = r.total_tone_usage || 0;
+                
+                // Add to chart data
+                labels.push(interfaceName);
+                subs.push(Number(subscriptions));
+                tones.push(Number(toneUsage));
+                
+                // Add to table
                 tbody.insertAdjacentHTML('beforeend', `
                     <tr>
-                        <td>${r.interface_name}</td>
-                        <td>${r.total_subscriptions}</td>
-                        <td>${unsubs}</td>
-                        <td>${r.total_tone_usage}</td>
+                        <td>${interfaceName}</td>
+                        <td>${subscriptions}</td>
+                        <td>${unsubscriptions}</td>
+                        <td>${toneUsage}</td>
                     </tr>
                 `);
             });

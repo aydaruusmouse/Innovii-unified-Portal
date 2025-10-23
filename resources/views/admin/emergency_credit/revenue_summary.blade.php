@@ -4,6 +4,8 @@
   <head>
     @include('layouts.heads_page') 
     @include('layouts.heads_css')
+    @include('layouts.config')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Bootstrap Icons -->
@@ -132,26 +134,104 @@
         });
       });
 
-      function loadRevenueData() {
+      // Simple load and wait function - no retry logic
+      async function loadRevenueData() {
         const formData = new FormData(document.getElementById('filterForm'));
         const params = new URLSearchParams(formData);
         
-        fetch(`${window.AppConfig.apiBaseUrl}/emergency-credit/revenue-summary/data?${params}`)
-          .then(response => response.json())
-          .then(data => {
-            if (data.error) {
-              console.error('Error:', data.error);
-              return;
-            }
-            
+        // Show loading state
+        document.getElementById('summaryCards').innerHTML = '<div class="col-md-12"><div class="alert alert-info">Loading data...</div></div>';
+        
+        // Use the current origin (dynamic)
+        const apiUrl = new URL(`${window.location.origin}/api/v1/emergency-credit/revenue-summary/data`);
+        Object.keys(Object.fromEntries(params)).forEach(key => {
+          apiUrl.searchParams.append(key, params.get(key));
+        });
+        
+        console.log('Loading data from:', apiUrl.toString());
+        
+        try {
+          console.log('Making fetch request to:', apiUrl.toString());
+          console.log('Request headers:', {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          });
+          
+          // Single request without timeout wrapper
+          const response = await fetch(apiUrl.toString(), {
+            method: 'GET',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'same-origin'
+          });
+          
+          console.log('Response received:', response.status, response.statusText);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log('API Response received:', data);
+          
+          if (data.error) {
+            throw new Error(data.error);
+          }
+          
+          if (!data.revenueData || data.revenueData.length === 0) {
+            console.log('No revenue data found');
+            revenueData = [];
+            document.getElementById('summaryCards').innerHTML = '<div class="col-md-12"><div class="alert alert-info">No data available for the selected date range</div></div>';
+          } else {
             revenueData = data.revenueData;
+            console.log('Successfully loaded revenue data:', revenueData.length, 'records');
             updateSummaryCards();
             updateChart();
             updateTable();
+          }
+          
+        } catch (error) {
+          console.error('Error loading revenue data:', error);
+          document.getElementById('summaryCards').innerHTML = `
+            <div class="col-md-12">
+              <div class="alert alert-warning">
+                <h5>Loading took too long</h5>
+                <p>Please try again. The server may need a moment to process the request.</p>
+                <button class="btn btn-sm btn-primary" onclick="loadRevenueData()">Try Again</button>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      // Fetch with timeout utility function
+      function fetchWithTimeout(url, options = {}, timeout = 10000) {
+        return new Promise((resolve, reject) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => {
+            controller.abort();
+            reject(new Error(`Request timeout after ${timeout}ms`));
+          }, timeout);
+          
+          fetch(url, {
+            ...options,
+            signal: controller.signal
+          })
+          .then(response => {
+            clearTimeout(timeoutId);
+            resolve(response);
           })
           .catch(error => {
-            console.error('Error fetching revenue data:', error);
+            clearTimeout(timeoutId);
+            reject(error);
           });
+        });
       }
 
       function updateSummaryCards() {
@@ -302,6 +382,32 @@
         const fileName = `emergency_credit_revenue_summary_${new Date().toISOString().split('T')[0]}.xlsx`;
         XLSX.writeFile(wb, fileName);
       }
+
+      // Simple test function
+      window.simpleTest = function() {
+        console.log('Simple test starting...');
+        const url = 'http://127.0.0.1:8000/api/v1/emergency-credit/revenue-summary/data?start_date=2025-01-01&end_date=2025-02-01';
+        console.log('Testing URL:', url);
+        
+        fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+          }
+        })
+        .then(response => {
+          console.log('Simple test - Response status:', response.status);
+          console.log('Simple test - Response ok:', response.ok);
+          return response.json();
+        })
+        .then(data => {
+          console.log('Simple test - Data received:', data);
+        })
+        .catch(error => {
+          console.error('Simple test - Error:', error);
+        });
+      };
     </script>
   </body>
 </html>

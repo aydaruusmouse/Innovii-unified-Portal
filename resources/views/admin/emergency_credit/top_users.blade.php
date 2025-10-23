@@ -4,6 +4,7 @@
   <head>
     @include('layouts.heads_page') 
     @include('layouts.heads_css')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Bootstrap Icons -->
@@ -188,11 +189,23 @@
       function fetchData(params = {}) {
         showLoading();
         
-        const url = new URL('${window.location.origin}/emergency-credit/top-users/data');
+        const url = new URL(`${window.location.origin}/emergency-credit/top-users/data`);
         Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
         
-        fetch(url)
-          .then(response => response.json())
+        fetch(url, {
+          method: 'GET',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+          },
+          credentials: 'same-origin'
+        })
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+          })
           .then(data => {
             const tbody = document.getElementById('topUsersTable');
             tbody.innerHTML = '';

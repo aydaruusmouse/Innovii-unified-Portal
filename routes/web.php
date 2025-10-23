@@ -20,6 +20,11 @@ Route::get('/admin-test', [DashboardController::class, 'index']);
 // Auth routes
 Route::get('/admin/login', [AuthController::class, 'showLoginForm'])->name('admin.login');
 Route::post('/admin/login', [AuthController::class, 'login'])->name('admin.login.submit');
+
+// Add a simple login route for authentication middleware
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
 Route::post('/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 
 // Admin dashboard route (using different path to avoid conflict with public/admin directory)
@@ -63,24 +68,28 @@ Route::get('/api/v1/overall-subscriber-report', [ServiceReportController::class,
 // Emergency Credit Routes (protected)
 Route::middleware('auth')->prefix('emergency-credit')->group(function () {
     Route::get('/daily', [EmergencyCreditController::class, 'daily'])->name('emergency_credit.daily');
-    Route::get('/daily/data', [EmergencyCreditController::class, 'dailyData']);
     Route::get('/top-users', [EmergencyCreditController::class, 'topUsers'])->name('emergency_credit.top_users');
-    Route::get('/top-users/data', [EmergencyCreditController::class, 'topUsersData']);
     Route::get('/weekly', [EmergencyCreditController::class, 'weekly'])->name('emergency_credit.weekly');
-    Route::get('/weekly/data', [EmergencyCreditController::class, 'weeklyData']);
     Route::get('/monthly', [EmergencyCreditController::class, 'monthly'])->name('emergency_credit.monthly');
-    Route::get('/monthly/data', [EmergencyCreditController::class, 'monthlyData']);
     Route::get('/status', [EmergencyCreditController::class, 'status'])->name('emergency_credit.status');
-    Route::get('/status/data', [EmergencyCreditController::class, 'statusData']);
     Route::get('/credit-type', [EmergencyCreditController::class, 'creditType'])->name('emergency_credit.credit_type');
-    Route::get('/credit-type/data', [EmergencyCreditController::class, 'creditTypeData']);
     Route::get('/status-wise-services', [EmergencyCreditController::class, 'statusWiseService'])->name('status.wise.services');
-    Route::get('/api/v1/status-wise-report', [EmergencyCreditController::class, 'statusWiseServiceData']);
     
     // Revenue Reports
     Route::get('/revenue-summary', [EmergencyCreditController::class, 'revenueSummary'])->name('emergency_credit.revenue_summary');
     Route::get('/revenue-data-only', [EmergencyCreditController::class, 'revenueDataOnly'])->name('emergency_credit.revenue_data_only');
     Route::get('/revenue-with-balance', [EmergencyCreditController::class, 'revenueWithBalance'])->name('emergency_credit.revenue_with_balance');
+});
+
+// Emergency Credit Data API routes (without auth for now)
+Route::prefix('emergency-credit')->group(function () {
+    Route::get('/daily/data', [EmergencyCreditController::class, 'dailyData']);
+    Route::get('/top-users/data', [EmergencyCreditController::class, 'topUsersData']);
+    Route::get('/weekly/data', [EmergencyCreditController::class, 'weeklyData']);
+    Route::get('/monthly/data', [EmergencyCreditController::class, 'monthlyData']);
+    Route::get('/status/data', [EmergencyCreditController::class, 'statusData']);
+    Route::get('/credit-type/data', [EmergencyCreditController::class, 'creditTypeData']);
+    Route::get('/api/v1/status-wise-report', [EmergencyCreditController::class, 'statusWiseServiceData']);
 });
 
 // API Routes
@@ -119,4 +128,10 @@ Route::prefix('api/crbt')->name('api.crbt.')->group(function () {
     Route::get('/daily-mis', [CRBTController::class, 'getDailyMISData'])->name('daily_mis');
     Route::get('/hourly-mis', [CRBTController::class, 'getHourlyMISData'])->name('hourly_mis');
     Route::get('/interface-data', [CRBTController::class, 'getInterfaceData'])->name('interface_data');
+    Route::get('/interface-tone', [CRBTController::class, 'getInterfaceToneData'])->name('interface_tone');
+    Route::get('/status-cycle', [CRBTController::class, 'getStatusCycleData'])->name('status_cycle');
+    Route::get('/hlr-activations', [CRBTController::class, 'getHLRActivationsData'])->name('hlr_activations');
+    Route::get('/user-info', [CRBTController::class, 'getUserInfoData'])->name('user_info');
+    Route::get('/user-tone-info', [CRBTController::class, 'getUserToneInfoData'])->name('user_tone_info');
+    Route::get('/billing-charges', [CRBTController::class, 'getBillingChargesData'])->name('billing_charges');
 });

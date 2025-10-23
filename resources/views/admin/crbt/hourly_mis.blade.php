@@ -183,33 +183,34 @@
                     const subs = [];
                     const rev = [];
                     
-                    rows.forEach(r => {
-                        const subsCount = Number(r.subscriptions ?? r.SUBS ?? 0);
-                        const unsubs = Number(r.unsubscriptions ?? r.UNSUBS ?? 0);
-                        const tones = Number(r.tone_downloads ?? r.TONES ?? 0);
-                        const revenue = Number(r.revenue ?? 0);
-                        
-                        totalSubs += subsCount;
-                        totalUnsubs += unsubs;
-                        totalTones += tones;
-                        totalRev += revenue;
-                        
-                        const hour = r.hour ?? r.HOUR ?? '';
-                        labels.push(hour);
-                        subs.push(subsCount);
-                        rev.push(revenue);
-                        
-                        tbody.insertAdjacentHTML('beforeend', `
-                            <tr>
-                                <td>${r.date ?? r.DATE ?? ''}</td>
-                                <td>${hour}</td>
-                                <td>${subsCount.toLocaleString()}</td>
-                                <td>${unsubs.toLocaleString()}</td>
-                                <td>${tones.toLocaleString()}</td>
-                                <td>${revenue.toLocaleString()}</td>
-                            </tr>
-                        `);
-                    });
+            rows.forEach(r => {
+                // Map CRBT hourly data structure
+                const subsCount = Number(r.activeNrml || 0);
+                const unsubs = Number(r.vchurnNrml || 0);
+                const tones = Number(r.VsmsSuccess || 0);
+                const revenue = Number(r.SubsRev || 0) + Number(r.RenewRev || 0);
+                                
+                                totalSubs += subsCount;
+                                totalUnsubs += unsubs;
+                                totalTones += tones;
+                                totalRev += revenue;
+                                
+                                const hour = r.hour ?? r.HOUR ?? '';
+                                labels.push(hour);
+                                subs.push(subsCount);
+                                rev.push(revenue);
+                                
+                                tbody.insertAdjacentHTML('beforeend', `
+                                    <tr>
+                                        <td>${r.date ?? r.DATE ?? ''}</td>
+                                        <td>${hour}</td>
+                                        <td>${subsCount.toLocaleString()}</td>
+                                        <td>${unsubs.toLocaleString()}</td>
+                                        <td>${tones.toLocaleString()}</td>
+                                        <td>${revenue.toLocaleString()}</td>
+                                    </tr>
+                                `);
+                            });
                     
                     // Update summary cards
                     document.getElementById('totalHourlySubs').querySelector('span').textContent = totalSubs.toLocaleString();
@@ -240,7 +241,12 @@
             }
         }
 
-        document.getElementById('applyFilter').addEventListener('click', ()=>{ currentPage=1; fetchHourly(); });
+        document.getElementById('applyFilter').addEventListener('click', function() {
+            console.log('Apply Filter button clicked for Hourly MIS');
+            currentPage=1; 
+            fetchHourly(); 
+        });
+        console.log('Initial hourly data load');
         fetchHourly();
     });
 </script>
