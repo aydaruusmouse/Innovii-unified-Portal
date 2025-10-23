@@ -177,7 +177,7 @@ class DashboardController extends Controller
                 'keys' => array_keys($viewData)
             ]);
 
-            return view('admin.index', $viewData);
+            return view('admin.dashboard', $viewData);
 
         } catch (\Exception $e) {
             Log::error('DashboardController Error:', [
