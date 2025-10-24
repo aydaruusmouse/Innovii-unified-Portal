@@ -14,6 +14,11 @@ Route::get('/test', function () {
     return 'Test route works!';
 });
 
+// Test dashboard without authentication
+Route::get('/test-dashboard', function () {
+    return view('admin.dashboard');
+});
+
 // Direct admin route for testing
 Route::get('/admin-test', [DashboardController::class, 'index']);
 
@@ -31,6 +36,23 @@ Route::post('/admin/logout', [AuthController::class, 'logout'])->name('admin.log
 // Protected
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard.simple');
+    
+    // System Management Routes
+    Route::get('/admin/users', function () {
+        return view('admin.system.users');
+    })->name('admin.users');
+    
+    Route::get('/admin/settings', function () {
+        return view('admin.system.settings');
+    })->name('admin.settings');
+    
+    Route::get('/admin/roles', function () {
+        return view('admin.system.roles');
+    })->name('admin.roles');
+    
+    Route::get('/admin/audit', function () {
+        return view('admin.system.audit');
+    })->name('admin.audit');
 });
 
 // Test route with different name

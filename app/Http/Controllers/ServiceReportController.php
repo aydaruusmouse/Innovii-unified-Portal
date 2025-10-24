@@ -273,32 +273,20 @@ class ServiceReportController extends Controller
                 'status' => $status
             ]);
 
-            // Base query for subscription_base
-            $baseQuery = DB::table('subscription_base')
+            // Simplified query using only subscription_base table
+            $query = DB::table('subscription_base')
                 ->select(
                     'date',
                     'name',
                     'status',
                     DB::raw('SUM(base_count) as base_count')
                 )
-                ->whereIn('status', ['ACTIVE', 'FAILED'])
-                ->groupBy('date', 'name', 'status');
-
-            // Query for canceled subscriptions from subs_in_out
-            $canceledQuery = DB::table('subs_in_out')
-                ->select(
-                    DB::raw('DATE(created_at) as date'),
-                    'name',
-                    DB::raw('"CANCELED" as status'),
-                    DB::raw('COUNT(*) as base_count')
-                )
-                ->where('status', 'CANCELED')
+                ->whereIn('status', ['ACTIVE', 'FAILED', 'CANCELED'])
                 ->groupBy('date', 'name', 'status');
 
             // Apply date filters if provided
             if ($startDate && $endDate) {
-                $baseQuery->whereBetween('date', [$startDate, $endDate]);
-                $canceledQuery->whereBetween(DB::raw('DATE(created_at)'), [$startDate, $endDate]);
+                $query->whereBetween('date', [$startDate, $endDate]);
                 \Log::info('Applied date range filter:', [
                     'start_date' => $startDate,
                     'end_date' => $endDate
@@ -307,24 +295,15 @@ class ServiceReportController extends Controller
 
             // Apply service filter if provided and not 'all'
             if ($serviceName && $serviceName !== 'all') {
-                $baseQuery->where('name', $serviceName);
-                $canceledQuery->where('name', $serviceName);
+                $query->where('name', $serviceName);
                 \Log::info('Applied service filter:', ['service_name' => $serviceName]);
             }
 
             // Apply status filter if provided and not 'all'
             if ($status && $status !== 'all') {
-                if ($status === 'CANCELED') {
-                    $baseQuery->whereRaw('1=0'); // Exclude all records from base query
-                } else {
-                    $baseQuery->where('status', $status);
-                    $canceledQuery->whereRaw('1=0'); // Exclude canceled records
-                }
+                $query->where('status', $status);
                 \Log::info('Applied status filter:', ['status' => $status]);
             }
-
-            // Union the queries
-            $query = $baseQuery->union($canceledQuery);
 
             // Log the generated SQL query
             \Log::info('Generated SQL Query:', [
@@ -375,9 +354,17 @@ class ServiceReportController extends Controller
                                     return $group->sum('base_count');
                                 });
 
+            // Create status distribution for dashboard chart
+            $statusDistribution = [
+                ['status' => 'ACTIVE', 'count' => $statusTotals['active']],
+                ['status' => 'FAILED', 'count' => $statusTotals['failed']],
+                ['status' => 'CANCELED', 'count' => $statusTotals['canceled']]
+            ];
+
             return response()->json([
                 'table_data' => $paginatedData->items(),
                 'status_totals' => $statusTotals,
+                'status_distribution' => $statusDistribution,
                 'dates' => $dates,
                 'active_data' => $activeData,
                 'failed_data' => $failedData,
