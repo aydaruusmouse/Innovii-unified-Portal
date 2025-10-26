@@ -153,42 +153,6 @@
   </ul>
 </li> -->
 
-<!-- <li class="pc-item pc-caption">
-  <label style="font-size: 14px;">System Management</label>
-  <i data-feather="sidebar"></i>
-</li>
-<li class="pc-item">
-  <a href="/admin/users" class="pc-link">
-    <span class="pc-micon">
-      <i data-feather="users"></i>
-    </span>
-    <span class="pc-mtext" style="font-size: 16px;">User Management</span>
-  </a>
-</li>
-<li class="pc-item">
-  <a href="/admin/settings" class="pc-link">
-    <span class="pc-micon">
-      <i data-feather="settings"></i>
-    </span>
-    <span class="pc-mtext" style="font-size: 16px;">System Settings</span>
-  </a>
-</li>
-<li class="pc-item">
-  <a href="/admin/roles" class="pc-link">
-    <span class="pc-micon">
-      <i data-feather="shield"></i>
-    </span>
-    <span class="pc-mtext" style="font-size: 16px;">Role & Permissions</span>
-  </a>
-</li>
-<li class="pc-item">
-  <a href="/admin/audit" class="pc-link">
-    <span class="pc-micon">
-      <i data-feather="eye"></i>
-    </span>
-    <span class="pc-mtext" style="font-size: 16px;">Audit Logs</span>
-  </a>
-</li> -->
 
 <li class="pc-item pc-caption">
   <label style="font-size: 14px;">Emergency Credit Reports</label>
