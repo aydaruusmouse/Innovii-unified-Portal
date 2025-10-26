@@ -255,32 +255,54 @@ cd /var/www/unified-reports-portal
 
 ### 🚀 **Step 2: Application Deployment**
 
-#### 1. **Clone Repository**
-```bash
-# Clone the repository
-git clone <repository-url> .
-# OR upload files via SFTP/SCP
-```
-
-#### 2. **Install Dependencies**
-```bash
-# Install PHP dependencies
-composer install --no-dev --optimize-autoloader
-
-# Install Node.js dependencies
-npm install
-
-# Compile assets
-npm run production
-```
-
-#### 3. **Environment Configuration**
+#### 1. **Set Up Environment**
 ```bash
 # Copy environment file
 cp .env.example .env
 
 # Generate application key
 php artisan key:generate
+```
+
+#### 2. **Configure Databases** ⚠️ **IMPORTANT: Do NOT run migrations on external databases**
+```bash
+# Edit .env with live database credentials
+# IMPORTANT: Use READ-ONLY users for external databases!
+nano .env
+```
+
+#### 3. **Clone Repository** (if using Git)
+```bash
+# Clone the repository
+git clone <repository-url> .
+# OR upload files via SFTP/SCP
+```
+
+#### 4. **Install Dependencies**
+```bash
+# Install PHP dependencies
+composer install --no-dev --optimize-autoloader
+
+# Install Node.js dependencies (optional, assets are pre-compiled)
+# npm install
+
+# Compile assets (optional)
+# npm run production
+```
+
+#### 5. **Run Migrations for Laravel Internal Database ONLY**
+```bash
+# ⚠️ CRITICAL: Only migrate Laravel internal tables (users, cache, jobs)
+# Do NOT run migrations that target external databases!
+
+# Only migrate application tables (users, cache, jobs)
+php artisan migrate --database=default
+
+# Seed admin users
+php artisan db:seed
+
+# Clear cache
+php artisan optimize:clear
 ```
 
 #### 4. **Configure Environment Variables**

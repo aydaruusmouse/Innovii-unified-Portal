@@ -8,15 +8,11 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::connection('mysql2')->create('transaction_credits', function (Blueprint $table) {
-            $table->id();
-            $table->string('msisdn');
-            $table->string('status');
-            $table->string('credit_type');
-            $table->decimal('units_amount_to_pay', 10, 2);
-            $table->timestamp('created_at')->useCurrent();
-            $table->timestamp('updated_at')->useCurrentOnUpdate()->nullable();
-        });
+        // ⚠️ IMPORTANT: Do NOT run migrations on external databases!
+        // This migration is for reference only.
+        // The transaction_credit table already exists in the live emergency_credit database.
+        // This application only READS from external databases and does not modify their structure.
+        return;
     }
 
     public function down()
