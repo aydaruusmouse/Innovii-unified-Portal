@@ -148,8 +148,8 @@ class DashboardController extends Controller
             ]);
 
             // Get total offers count
-            $totalOffers = DB::table('offers')->count();
-            $activeOffers = DB::table('offers')->where('status', 'ACTIVE')->count();
+            $totalOffers = DB::connection('vivacom_sdf')->table('offers')->count();
+            $activeOffers = DB::connection('vivacom_sdf')->table('offers')->where('status', 'ACTIVE')->count();
             Log::info('DashboardController: Offers counts', [
                 'total' => $totalOffers,
                 'active' => $activeOffers

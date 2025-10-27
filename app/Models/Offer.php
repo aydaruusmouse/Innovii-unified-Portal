@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Offer extends Model
 {
+    protected $connection = 'vivacom_sdf';
     protected $table = 'offers';
 
     protected $fillable = [

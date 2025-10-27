@@ -78,7 +78,7 @@ class OfferController extends Controller
             
             // Get top 3 offers based on subscription base count
             // Get top 3 offers based on subscription base count
-            $topOffers = DB::table('offers')
+            $topOffers = DB::connection('vivacom_sdf')->table('offers')
                 ->select('offers.*', 'sb.base_count')
                 ->join(DB::raw('(SELECT name, MAX(base_count) as base_count 
                                FROM subscription_base 
@@ -136,7 +136,7 @@ class OfferController extends Controller
     public function show($id)
     {
         try {
-            $offer = DB::table('offers')
+            $offer = DB::connection('vivacom_sdf')->table('offers')
                 ->where('id', $id)
                 ->first();
 

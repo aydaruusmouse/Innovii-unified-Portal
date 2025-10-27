@@ -9,13 +9,11 @@ return new class extends Migration
 {
     public function up()
     {
-        // Check if indexes exist before adding them
-        Schema::connection('mysql2')->table('transaction_credits', function (Blueprint $table) {
-            // Only add indexes if they don't exist
-            if (!$this->indexExists('transaction_credits', 'created_at_status_index')) {
-                $table->index(['created_at', 'status'], 'created_at_status_index');
-            }
-        });
+        // ⚠️ IMPORTANT: Do NOT run migrations on external databases!
+        // This migration is for reference only.
+        // The transaction_credit table already exists in the live emergency_credit database.
+        // This application only READS from external databases and does not modify their structure.
+        return;
     }
 
     public function down()

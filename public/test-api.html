@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test API</title>
+</head>
+<body>
+    <h1>Testing API</h1>
+    <div id="result"></div>
+    <script>
+        fetch('/api/v1/offers')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').textContent = 'Success! Total offers: ' + data.totalOffers;
+            })
+            .catch(error => {
+                document.getElementById('result').textContent = 'Error: ' + error.message;
+            });
+    </script>
+</body>
+</html>
+
+
