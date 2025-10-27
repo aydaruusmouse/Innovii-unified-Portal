@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -42,12 +42,45 @@ return [
             'synchronous' => null,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Main Application Database (WRITE ACCESS)
+        | For: Users, Sessions, Cache, Jobs, Migrations
+        | This is used for Laravel's internal operations and user management
+        |--------------------------------------------------------------------------
+        */
         'mysql' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
-            'host' => env('DB_HOST', '127.0.0.1'),
+            'host' => env('DB_HOST', '172.16.53.200'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_DATABASE', 'vivacom_sfd_live'),
+            'database' => env('DB_DATABASE', 'telesom_reports_portal'),
+            'username' => env('DB_USERNAME', 'root'),
+            'password' => env('DB_PASSWORD', ''),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
+        /*
+        |--------------------------------------------------------------------------
+        | SDF Reports Database (READ-ONLY ACCESS)
+        | For: SDF Reports from vivacom_sfd_live
+        | Controllers use this connection to read SDF reports
+        |--------------------------------------------------------------------------
+        */
+        'vivacom_sdf' => [
+            'driver' => 'mysql',
+            'host' => env('SDF_HOST', '127.0.0.1'),
+            'port' => env('SDF_PORT', '3306'),
+            'database' => 'vivacom_sfd_live',
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),

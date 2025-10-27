@@ -9,15 +9,15 @@ class ServiceReportController extends Controller
 {
     public function index()
     {
-        // Get unique service names from the subs_in_out_count table
-        $services = DB::table('subs_in_out_count')
+        // Get unique service names from the subs_in_out_count table (READ-ONLY from vivacom_sdf_live)
+        $services = DB::connection('vivacom_sdf')->table('subs_in_out_count')
             ->select('name')
             ->distinct()
             ->orderBy('name')
             ->get();
 
-        // Get unique offers for the dropdown
-        $offers = DB::table('offers')
+        // Get unique offers for the dropdown (READ-ONLY from vivacom_sdf_live)
+        $offers = DB::connection('vivacom_sdf')->table('offers')
             ->select('name')
             ->distinct()
             ->orderBy('name')
@@ -28,8 +28,8 @@ class ServiceReportController extends Controller
 
     public function statusWiseServices()
     {
-        // Get unique service names from the subs_in_out_count table
-        $services = DB::table('subs_in_out_count')
+        // Get unique service names from the subs_in_out_count table (READ-ONLY)
+        $services = DB::connection('vivacom_sdf')->table('subs_in_out_count')
             ->select('name')
             ->distinct()
             ->orderBy('name')
@@ -43,8 +43,8 @@ class ServiceReportController extends Controller
 
     public function statusAnalysis()
     {
-        // Get unique service names from the subscription_base table
-        $services = DB::table('subscription_base')
+        // Get unique service names from the subscription_base table (READ-ONLY)
+        $services = DB::connection('vivacom_sdf')->table('subscription_base')
             ->select('name')
             ->distinct()
             ->orderBy('name')
@@ -70,7 +70,7 @@ class ServiceReportController extends Controller
             }
 
             // Base query
-            $query = DB::table('subs_in_out_count')
+            $query = DB::connection('vivacom_sdf')->table('subs_in_out_count')
                 ->where('name', $serviceName);
 
             // Apply date filters if provided
@@ -156,7 +156,7 @@ class ServiceReportController extends Controller
             $perPage = $request->input('per_page', 10); // Default 10 items per page
 
             // Base query for subs_in_out_count
-            $query = DB::table('subs_in_out_count')
+            $query = DB::connection('vivacom_sdf')->table('subs_in_out_count')
                 ->whereIn('status', ['ACTIVE', 'CANCELED']);
 
             // Apply date filters if provided
@@ -188,7 +188,7 @@ class ServiceReportController extends Controller
             ->orderBy('date', 'desc');
 
             // Get failed status from subscription_base
-            $failedQuery = DB::table('subscription_base')
+            $failedQuery = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select(
                     'date',
                     'name',
@@ -274,7 +274,7 @@ class ServiceReportController extends Controller
             ]);
 
             // Simplified query using only subscription_base table
-            $query = DB::table('subscription_base')
+            $query = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select(
                     'date',
                     'name',
@@ -395,7 +395,7 @@ class ServiceReportController extends Controller
     public function overallSubscriberReport()
     {
         // Get unique service names from the subscription_base table (READ-ONLY)
-        $services = DB::table('subscription_base')
+        $services = DB::connection('vivacom_sdf')->table('subscription_base')
             ->select('name')
             ->distinct()
             ->orderBy('name')
@@ -421,7 +421,7 @@ class ServiceReportController extends Controller
             ]);
 
             // Get the latest date's active subscribers (READ-ONLY)
-            $latestActiveQuery = DB::table('subscription_base')
+            $latestActiveQuery = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select(
                     'date',
                     'name',
@@ -436,7 +436,7 @@ class ServiceReportController extends Controller
                 ->first();
 
             // Get the latest date's failed subscribers (READ-ONLY)
-            $latestFailedQuery = DB::table('subscription_base')
+            $latestFailedQuery = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select(
                     'date',
                     'name',
@@ -451,7 +451,7 @@ class ServiceReportController extends Controller
                 ->first();
 
             // Get canceled count from subs_in_out_count (READ-ONLY)
-            $canceledCount = DB::table('subs_in_out_count')
+            $canceledCount = DB::connection('vivacom_sdf')->table('subs_in_out_count')
                 ->select(DB::raw('SUM(base_count) as total_canceled'))
                 ->where('status', 'CANCELED')
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
@@ -463,7 +463,7 @@ class ServiceReportController extends Controller
                 ->first();
 
             // Get main data from subscription_base (READ-ONLY)
-            $query = DB::table('subscription_base')
+            $query = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select(
                     'date',
                     'name',
@@ -547,31 +547,31 @@ class ServiceReportController extends Controller
             $today = now()->format('Y-m-d');
             
             // Get daily active subscribers from subscription_base (READ-ONLY)
-            $dailyActive = DB::table('subscription_base')
+            $dailyActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', $today)
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
             // Get monthly active subscribers (last 30 days) (READ-ONLY)
-            $monthlyActive = DB::table('subscription_base')
+            $monthlyActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', '>=', now()->subDays(30)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
             // Get yearly active subscribers (last 365 days) (READ-ONLY)
-            $yearlyActive = DB::table('subscription_base')
+            $yearlyActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', '>=', now()->subDays(365)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
             // Get total services count (READ-ONLY)
-            $totalServices = DB::table('subs_in_out_count')
+            $totalServices = DB::connection('vivacom_sdf')->table('subs_in_out_count')
                 ->select('name')
                 ->distinct()
                 ->count();
 
             // Get total active subscribers by service (READ-ONLY)
-            $servicesStats = DB::table('subscription_base')
+            $servicesStats = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select('name', DB::raw('SUM(base_count) as total_subscribers'))
                 ->where('status', 'ACTIVE')
                 ->where('date', $today)
@@ -581,7 +581,7 @@ class ServiceReportController extends Controller
                 ->get();
 
             // Get subscription trends for the last 7 days
-            $trendData = DB::table('subscription_base')
+            $trendData = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select('date', DB::raw('SUM(base_count) as total_subscribers'))
                 ->where('status', 'ACTIVE')
                 ->where('date', '>=', now()->subDays(7)->format('Y-m-d'))
@@ -590,14 +590,14 @@ class ServiceReportController extends Controller
                 ->get();
 
             // Get status distribution
-            $statusDistribution = DB::table('subscription_base')
+            $statusDistribution = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select('status', DB::raw('SUM(base_count) as count'))
                 ->where('date', $today)
                 ->groupBy('status')
                 ->get();
 
             // Get recent activity (last 5 days)
-            $recentActivity = DB::table('subscription_base')
+            $recentActivity = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->select('date', 'name', 'status', DB::raw('SUM(base_count) as total_subscribers'))
                 ->where('date', '>=', now()->subDays(5)->format('Y-m-d'))
                 ->groupBy('date', 'name', 'status')
@@ -606,14 +606,14 @@ class ServiceReportController extends Controller
                 ->get();
 
             // Calculate percentage changes
-            $yesterdayActive = DB::table('subscription_base')
+            $yesterdayActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', now()->subDay()->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
             $dailyChange = $yesterdayActive > 0 ? (($dailyActive - $yesterdayActive) / $yesterdayActive) * 100 : 0;
 
-            $lastMonthActive = DB::table('subscription_base')
+            $lastMonthActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', '>=', now()->subDays(60)->format('Y-m-d'))
                 ->where('date', '<', now()->subDays(30)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
@@ -621,7 +621,7 @@ class ServiceReportController extends Controller
 
             $monthlyChange = $lastMonthActive > 0 ? (($monthlyActive - $lastMonthActive) / $lastMonthActive) * 100 : 0;
 
-            $lastYearActive = DB::table('subscription_base')
+            $lastYearActive = DB::connection('vivacom_sdf')->table('subscription_base')
                 ->where('date', '>=', now()->subDays(730)->format('Y-m-d'))
                 ->where('date', '<', now()->subDays(365)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
