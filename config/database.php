@@ -62,6 +62,14 @@ return [
             ]) : [],
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | CRBT Reports Database (READ-ONLY ACCESS)
+        |--------------------------------------------------------------------------
+        |
+        | This connection is for READ-ONLY reporting from crbt_core_backup.
+        |
+        */
         'crbt' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),
@@ -82,6 +90,14 @@ return [
             ]) : [],
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Emergency Credit Database (READ-ONLY ACCESS)
+        |--------------------------------------------------------------------------
+        |
+        | This connection is for READ-ONLY reporting from emergency_credit.
+        |
+        */
         'mysql2' => [
             'driver' => 'mysql',
             'url' => env('DATABASE_URL'),

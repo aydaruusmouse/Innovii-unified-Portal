@@ -394,7 +394,7 @@ class ServiceReportController extends Controller
 
     public function overallSubscriberReport()
     {
-        // Get unique service names from the subscription_base table
+        // Get unique service names from the subscription_base table (READ-ONLY)
         $services = DB::table('subscription_base')
             ->select('name')
             ->distinct()
@@ -420,7 +420,7 @@ class ServiceReportController extends Controller
                 'service_name' => $serviceName
             ]);
 
-            // Get the latest date's active subscribers
+            // Get the latest date's active subscribers (READ-ONLY)
             $latestActiveQuery = DB::table('subscription_base')
                 ->select(
                     'date',
@@ -435,7 +435,7 @@ class ServiceReportController extends Controller
                 ->orderBy('date', 'desc')
                 ->first();
 
-            // Get the latest date's failed subscribers
+            // Get the latest date's failed subscribers (READ-ONLY)
             $latestFailedQuery = DB::table('subscription_base')
                 ->select(
                     'date',
@@ -450,7 +450,7 @@ class ServiceReportController extends Controller
                 ->orderBy('date', 'desc')
                 ->first();
 
-            // Get canceled count from subs_in_out_count
+            // Get canceled count from subs_in_out_count (READ-ONLY)
             $canceledCount = DB::table('subs_in_out_count')
                 ->select(DB::raw('SUM(base_count) as total_canceled'))
                 ->where('status', 'CANCELED')
@@ -462,7 +462,7 @@ class ServiceReportController extends Controller
                 })
                 ->first();
 
-            // Get main data from subscription_base
+            // Get main data from subscription_base (READ-ONLY)
             $query = DB::table('subscription_base')
                 ->select(
                     'date',
@@ -546,31 +546,31 @@ class ServiceReportController extends Controller
             // Get today's date
             $today = now()->format('Y-m-d');
             
-            // Get daily active subscribers from subscription_base
+            // Get daily active subscribers from subscription_base (READ-ONLY)
             $dailyActive = DB::table('subscription_base')
                 ->where('date', $today)
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
-            // Get monthly active subscribers (last 30 days)
+            // Get monthly active subscribers (last 30 days) (READ-ONLY)
             $monthlyActive = DB::table('subscription_base')
                 ->where('date', '>=', now()->subDays(30)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
-            // Get yearly active subscribers (last 365 days)
+            // Get yearly active subscribers (last 365 days) (READ-ONLY)
             $yearlyActive = DB::table('subscription_base')
                 ->where('date', '>=', now()->subDays(365)->format('Y-m-d'))
                 ->where('status', 'ACTIVE')
                 ->sum('base_count');
 
-            // Get total services count
+            // Get total services count (READ-ONLY)
             $totalServices = DB::table('subs_in_out_count')
                 ->select('name')
                 ->distinct()
                 ->count();
 
-            // Get total active subscribers by service
+            // Get total active subscribers by service (READ-ONLY)
             $servicesStats = DB::table('subscription_base')
                 ->select('name', DB::raw('SUM(base_count) as total_subscribers'))
                 ->where('status', 'ACTIVE')
