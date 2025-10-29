@@ -456,9 +456,14 @@ class ServiceReportController extends Controller
                 ->orderBy('date', 'desc')
                 ->first();
 
-            // Get canceled count from subs_in_out_count (READ-ONLY)
-            $canceledCount = DB::connection('vivacom_sdf')->table('subs_in_out_count')
-                ->select(DB::raw('SUM(base_count) as total_canceled'))
+            // Get the latest date's canceled subscribers (READ-ONLY)
+            $latestCanceledQuery = DB::connection('vivacom_sdf')->table('subs_in_out_count')
+                ->select(
+                    'date',
+                    'name',
+                    'status',
+                    'base_count'
+                )
                 ->where('status', 'CANCELED')
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                     return $query->whereBetween('date', [$startDate, $endDate]);
@@ -466,6 +471,7 @@ class ServiceReportController extends Controller
                 ->when($serviceName && $serviceName !== 'all', function ($query) use ($serviceName) {
                     return $query->where('name', $serviceName);
                 })
+                ->orderBy('date', 'desc')
                 ->first();
 
             // Get main data from subscription_base (READ-ONLY)
@@ -497,9 +503,13 @@ class ServiceReportController extends Controller
 
             // Calculate status totals
             $totals = [
-                'active' => $latestActiveQuery ? $latestActiveQuery->base_count : 0,
-                'failed' => $latestFailedQuery ? $latestFailedQuery->base_count : 0,
-                'canceled' => $canceledCount ? $canceledCount->total_canceled : 0
+                // Latest base_count for each status (most recent date within filters)
+                'active' => $latestActiveQuery ? (int) $latestActiveQuery->base_count : 0,
+                'failed' => $latestFailedQuery ? (int) $latestFailedQuery->base_count : 0,
+                'canceled' => $latestCanceledQuery ? (int) $latestCanceledQuery->base_count : 0,
+                // Convenience aggregate for UI cards that show Active + Canceled as "Total Subscriptions"
+                'total_subscriptions' => ($latestActiveQuery ? (int) $latestActiveQuery->base_count : 0)
+                    + ($latestCanceledQuery ? (int) $latestCanceledQuery->base_count : 0)
             ];
 
             // Group data by date for trend chart

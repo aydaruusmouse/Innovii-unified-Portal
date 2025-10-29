@@ -22,7 +22,7 @@
     <div class="col-md-3">
         <div class="card">
             <div class="card-body">
-                <h6 class="text-muted mb-3">Total Subscriptions</h6>
+                <h6 class="text-muted mb-3">New Subscribers</h6>
                 <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalSubscriptions">
                     <i class="feather icon-user-plus text-primary f-24 m-r-5"></i>
                     <span>Loading...</span>
@@ -81,7 +81,7 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Total Subscriptions</th>
+                        <th>New Subscribers</th>
                         <th>Total Unsubscriptions</th>
                         <th>Active Subscribers</th>
                         <th>Tone Downloads</th>
@@ -186,7 +186,9 @@
 
                 const labels = [];
                 const subs = [];
-                let totalSubs = 0, totalUnsubs = 0, totalActive = 0;
+                // Track latest (most recent date) values instead of sums
+                let latestSubs = 0, latestUnsubs = 0, latestActive = 0;
+                let latestDate = null;
                 tbody.innerHTML = '';
 
                         rows.forEach(r => {
@@ -201,10 +203,14 @@
                             
                             labels.push(date);
                             subs.push(subsCount);
-                            
-                            totalSubs += subsCount;
-                            totalUnsubs += unsubsCount;
-                            totalActive += activeCount;
+
+                            // Determine if this row is the latest by date
+                            if (!latestDate || new Date(date) > new Date(latestDate)) {
+                                latestDate = date;
+                                latestSubs = subsCount;
+                                latestUnsubs = unsubsCount;
+                                latestActive = activeCount;
+                            }
                             
                             tbody.insertAdjacentHTML('beforeend', `
                                 <tr>
@@ -217,10 +223,10 @@
                             `);
                         });
 
-                // Update summary cards
-                document.getElementById('totalSubscriptions').querySelector('span').textContent = totalSubs.toLocaleString();
-                document.getElementById('totalUnsubscriptions').querySelector('span').textContent = totalUnsubs.toLocaleString();
-                document.getElementById('activeSubscribers').querySelector('span').textContent = totalActive.toLocaleString();
+                // Update summary cards using latest base counts (most recent date)
+                document.getElementById('totalSubscriptions').querySelector('span').textContent = Number(latestSubs).toLocaleString();
+                document.getElementById('totalUnsubscriptions').querySelector('span').textContent = Number(latestUnsubs).toLocaleString();
+                document.getElementById('activeSubscribers').querySelector('span').textContent = Number(latestActive).toLocaleString();
 
                 // Generate pagination controls
                 generatePagination();

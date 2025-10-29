@@ -56,6 +56,22 @@
                   </div>
                 </div>
                 <div class="row mb-4">
+                  <div class="col-md-3">
+                    <label for="timePeriod" class="form-label">Time Period</label>
+                    <select class="form-select" id="timePeriod">
+                      <option value="daily" selected>Daily</option>
+                    </select>
+                  </div>
+                  <div class="col-md-3">
+                    <label for="compareWith" class="form-label">Compare With</label>
+                    <select class="form-select" id="compareWith">
+                      <option value="none" selected>None</option>
+                      <option value="previous_period">Previous Period</option>
+                      <option value="last_year_same_period">Same Period Last Year</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-4">
                   <div class="col-12 text-end">
                     <button class="btn btn-primary" id="applyFilter">
                       <i class="bi bi-funnel"></i> Apply Filters
@@ -259,12 +275,14 @@
         const endDate = document.getElementById('endDate').value;
         const service = document.getElementById('serviceFilter').value;
         const status = document.getElementById('statusFilter').value;
+        const compareWith = document.getElementById('compareWith') ? document.getElementById('compareWith').value : 'none';
 
         console.log('Fetching data with params:', {
           startDate,
           endDate,
           service,
-          status
+          status,
+          compareWith
         });
 
         fetch(`/api/v1/status-analysis?start_date=${startDate}&end_date=${endDate}&service_name=${service}&status=${status}&page=${page}&per_page=${perPage}`)
@@ -288,7 +306,74 @@
             trendChart.data.datasets[0].data = data.dates.map(date => data.active_data[date] || 0);
             trendChart.data.datasets[1].data = data.dates.map(date => data.failed_data[date] || 0);
             trendChart.data.datasets[2].data = data.dates.map(date => data.canceled_data[date] || 0);
-            trendChart.update();
+            // Remove previous comparison datasets if any
+            trendChart.data.datasets = trendChart.data.datasets.slice(0, 3);
+
+            const addComparison = (labelSuffix, comp) => {
+              const labels = data.dates;
+              const mk = (arrMap) => labels.map(d => arrMap[d] || 0);
+              trendChart.data.datasets.push({
+                label: `Active (${labelSuffix})`,
+                data: mk(comp.active_data || {}),
+                borderColor: '#28a745',
+                backgroundColor: 'transparent',
+                borderDash: [6,4],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+              });
+              trendChart.data.datasets.push({
+                label: `Failed (${labelSuffix})`,
+                data: mk(comp.failed_data || {}),
+                borderColor: '#dc3545',
+                backgroundColor: 'transparent',
+                borderDash: [6,4],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+              });
+              trendChart.data.datasets.push({
+                label: `Canceled (${labelSuffix})`,
+                data: mk(comp.canceled_data || {}),
+                borderColor: '#ffc107',
+                backgroundColor: 'transparent',
+                borderDash: [6,4],
+                borderWidth: 2,
+                pointRadius: 0,
+                fill: false,
+                tension: 0.1
+              });
+            };
+
+            const fetchComparison = () => {
+              if (compareWith === 'none') {
+                trendChart.update();
+                return;
+              }
+              const sd = new Date(startDate);
+              const ed = new Date(endDate);
+              const days = Math.max(1, Math.round((ed - sd) / (1000*60*60*24)) + 1);
+              let cStart, cEnd, labelSuffix;
+              if (compareWith === 'previous_period') {
+                cEnd = new Date(sd.getTime() - 24*60*60*1000);
+                cStart = new Date(cEnd.getTime() - (days-1)*24*60*60*1000);
+                labelSuffix = 'Prev Period';
+              } else {
+                cStart = new Date(sd); cStart.setFullYear(cStart.getFullYear()-1);
+                cEnd = new Date(ed); cEnd.setFullYear(cEnd.getFullYear()-1);
+                labelSuffix = 'Last Year';
+              }
+              const fmt = (d)=> d.toISOString().slice(0,10);
+              const url = `/api/v1/status-analysis?start_date=${fmt(cStart)}&end_date=${fmt(cEnd)}&service_name=${service}&status=${status}&page=1&per_page=${perPage}`;
+              fetch(url)
+                .then(r=>r.json())
+                .then(comp=>{ addComparison(labelSuffix, comp); trendChart.update(); })
+                .catch(()=> trendChart.update());
+            };
+
+            fetchComparison();
 
             // Update table
             const tbody = document.querySelector('#statusTable tbody');
@@ -358,6 +443,12 @@
         currentPage = 1;
         fetchData();
       });
+      if (document.getElementById('compareWith')) {
+        document.getElementById('compareWith').addEventListener('change', () => {
+          currentPage = 1;
+          fetchData();
+        });
+      }
 
       document.getElementById('perPage').addEventListener('change', (e) => {
         perPage = parseInt(e.target.value);
