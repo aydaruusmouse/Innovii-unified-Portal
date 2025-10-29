@@ -771,80 +771,71 @@ class EmergencyCreditController extends Controller
                     ]);
                 }
 
-                // For now, let's use the same query as revenue summary but add a note that it's for "data only"
-                // This will show all credit types until we can determine the correct credit type structure
-                $query = DB::connection('mysql2')
-                    ->table('transaction_credit as c')
-                    ->leftJoin(DB::raw('(
+                // Query for DATA credit type only with Grand Total using UNION ALL
+                $results = DB::connection('mysql2')
+                    ->select("
                         SELECT 
-                            rc.id as credit_id,
-                            SUM(r.amount) as repaid_amount
-                        FROM transaction_repayment r
-                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
-                        WHERE r.status = "SUCCESS"
-                        GROUP BY rc.id
-                    ) as r'), 'c.id', '=', 'r.credit_id')
-                    ->select([
-                        DB::raw('DATE(c.created_at) as date_label'),
-                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
-                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
-                        DB::raw('CASE 
-                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
-                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
-                        END as repayment_percentage')
-                    ])
-                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
-                    ->whereIn('c.status', ['CREDIT', 'REPAID'])
-                    ->groupBy(DB::raw('DATE(c.created_at)'))
-                    ->orderBy(DB::raw('DATE(c.created_at)'));
+                            DATE(c.created_at) as date_label,
+                            ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit,
+                            ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid,
+                            CASE 
+                                WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                                ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                            END as repayment_percentage
+                        FROM transaction_credit c
+                        LEFT JOIN (
+                            SELECT 
+                                rc.id as credit_id,
+                                SUM(r.amount) as repaid_amount
+                            FROM transaction_repayment r
+                            INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                            WHERE r.status = 'SUCCESS'
+                            AND rc.credit_type = 'DATA'
+                            GROUP BY rc.id
+                        ) r ON c.id = r.credit_id
+                        WHERE 
+                            c.created_at >= ? 
+                            AND c.created_at <= ?
+                            AND c.status IN ('CREDIT', 'REPAID')
+                            AND c.credit_type = 'DATA'
+                        GROUP BY DATE(c.created_at)
 
-                // Get daily data
-                $dailyData = $query->get();
+                        UNION ALL
 
-                // Get grand total
-                $grandTotalQuery = DB::connection('mysql2')
-                    ->table('transaction_credit as c')
-                    ->leftJoin(DB::raw('(
                         SELECT 
-                            rc.id as credit_id,
-                            SUM(r.amount) as repaid_amount
-                        FROM transaction_repayment r
-                        INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
-                        WHERE r.status = "SUCCESS"
-                        GROUP BY rc.id
-                    ) as r'), 'c.id', '=', 'r.credit_id')
-                    ->select([
-                        DB::raw('"Grand Total" as date_label'),
-                        DB::raw('ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit'),
-                        DB::raw('ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid'),
-                        DB::raw('CASE 
-                            WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
-                            ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
-                        END as repayment_percentage')
-                    ])
-                    ->whereBetween('c.created_at', [$startDateTime, $endDateTime])
-                    ->whereIn('c.status', ['CREDIT', 'REPAID']);
+                            'Grand Total' as date_label,
+                            ROUND(SUM(c.units_amount_to_pay) / 10000.0, 2) as total_credit,
+                            ROUND(SUM(COALESCE(r.repaid_amount, 0)) / 10000.0, 2) as total_paid,
+                            CASE 
+                                WHEN SUM(c.units_amount_to_pay) = 0 THEN 0
+                                ELSE ROUND((SUM(COALESCE(r.repaid_amount, 0)) / SUM(c.units_amount_to_pay)) * 100, 2)
+                            END as repayment_percentage
+                        FROM transaction_credit c
+                        LEFT JOIN (
+                            SELECT 
+                                rc.id as credit_id,
+                                SUM(r.amount) as repaid_amount
+                            FROM transaction_repayment r
+                            INNER JOIN transaction_credit rc ON r.credit_transaction_id = rc.id
+                            WHERE r.status = 'SUCCESS'
+                            AND rc.credit_type = 'DATA'
+                            GROUP BY rc.id
+                        ) r ON c.id = r.credit_id
+                        WHERE 
+                            c.created_at >= ? 
+                            AND c.created_at <= ?
+                            AND c.status IN ('CREDIT', 'REPAID')
+                            AND c.credit_type = 'DATA'
 
-                $grandTotal = $grandTotalQuery->first();
+                        ORDER BY 
+                            CASE WHEN date_label = 'Grand Total' THEN 1 ELSE 0 END,
+                            date_label
+                    ", [$startDateTime, $endDateTime, $startDateTime, $endDateTime]);
                 
-                // If no data found, create empty grand total
-                if (!$grandTotal || $grandTotal->total_credit === null) {
-                    $grandTotal = (object)[
-                        'date_label' => 'Grand Total',
-                        'total_credit' => '0.00',
-                        'total_paid' => '0.00',
-                        'repayment_percentage' => '0.00'
-                    ];
-                }
-
-                // Combine results
-                $results = $dailyData->concat(collect([$grandTotal]));
-
                 Log::info('Revenue data only query result', [
-                    'daily_count' => $dailyData->count(),
+                    'count' => count($results),
                     'start_date' => $startDateTime,
-                    'end_date' => $endDateTime,
-                    'grand_total' => $grandTotal
+                    'end_date' => $endDateTime
                 ]);
 
                 return response()->json([

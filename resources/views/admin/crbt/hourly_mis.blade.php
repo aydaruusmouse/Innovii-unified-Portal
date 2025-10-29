@@ -41,23 +41,12 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-body">
                 <h6 class="text-muted mb-3">Tone Downloads</h6>
                 <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalHourlyTones">
                     <i class="feather icon-music text-success f-24 m-r-5"></i>
-                    <span>Loading...</span>
-                </h3>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted mb-3">Revenue</h6>
-                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalHourlyRevenue">
-                    <i class="feather icon-dollar-sign text-warning f-24 m-r-5"></i>
                     <span>Loading...</span>
                 </h3>
             </div>
@@ -82,11 +71,10 @@
                                 <th>Subscriptions</th>
                                 <th>Unsubscriptions</th>
                                 <th>Tone Downloads</th>
-                                <th>Revenue</th>
                             </tr>
                         </thead>
                         <tbody id="hourlyMisBody">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="5" class="text-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -101,23 +89,13 @@
 
 <!-- Charts Section -->
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h5>Hourly Subscriptions</h5>
             </div>
             <div class="card-body">
                 <canvas id="hourlySubsChart" style="height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Hourly Revenue</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="hourlyRevenueChart" style="height: 300px;"></canvas>
             </div>
         </div>
     </div>
@@ -128,24 +106,16 @@
     document.addEventListener('DOMContentLoaded', function() {
         let currentPage = 1;
         const perPage = 24;
-        let hourlySubsChart, hourlyRevenueChart;
+        let hourlySubsChart;
 
-        function initCharts(labels = [], subs = [], revenue = []) {
+        function initCharts(labels = [], subs = []) {
             const subsCtx = document.getElementById('hourlySubsChart').getContext('2d');
-            const revenueCtx = document.getElementById('hourlyRevenueChart').getContext('2d');
 
             if (hourlySubsChart) hourlySubsChart.destroy();
-            if (hourlyRevenueChart) hourlyRevenueChart.destroy();
 
             hourlySubsChart = new Chart(subsCtx, {
                 type: 'line',
                 data: { labels, datasets: [{ label: 'Subscriptions', data: subs, borderColor: 'rgb(75, 192, 192)', tension: 0.1 }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            hourlyRevenueChart = new Chart(revenueCtx, {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'Revenue', data: revenue, backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)', borderWidth: 1 }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
@@ -161,7 +131,7 @@
 
         async function fetchHourly() {
             const tbody = document.getElementById('hourlyMisBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
             try {
                 const res = await fetch(buildUrl());
                 const json = await res.json();
@@ -169,36 +139,31 @@
                 const pagination = json.pagination || { current_page:1, total:0, per_page:perPage, last_page:1 };
 
                 if (rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data</td></tr>';
                     // Clear summary cards
                     document.getElementById('totalHourlySubs').querySelector('span').textContent = '0';
                     document.getElementById('totalHourlyUnsubs').querySelector('span').textContent = '0';
                     document.getElementById('totalHourlyTones').querySelector('span').textContent = '0';
-                    document.getElementById('totalHourlyRevenue').querySelector('span').textContent = '0';
                     initCharts();
                 } else {
                     tbody.innerHTML = '';
-                    let totalSubs = 0, totalUnsubs = 0, totalTones = 0, totalRev = 0;
+                    let totalSubs = 0, totalUnsubs = 0, totalTones = 0;
                     const labels = [];
                     const subs = [];
-                    const rev = [];
                     
             rows.forEach(r => {
                 // Map CRBT hourly data structure
                 const subsCount = Number(r.activeNrml || 0);
                 const unsubs = Number(r.vchurnNrml || 0);
                 const tones = Number(r.VsmsSuccess || 0);
-                const revenue = Number(r.SubsRev || 0) + Number(r.RenewRev || 0);
                                 
                                 totalSubs += subsCount;
                                 totalUnsubs += unsubs;
                                 totalTones += tones;
-                                totalRev += revenue;
                                 
                                 const hour = r.hour ?? r.HOUR ?? '';
                                 labels.push(hour);
                                 subs.push(subsCount);
-                                rev.push(revenue);
                                 
                                 tbody.insertAdjacentHTML('beforeend', `
                                     <tr>
@@ -207,7 +172,6 @@
                                         <td>${subsCount.toLocaleString()}</td>
                                         <td>${unsubs.toLocaleString()}</td>
                                         <td>${tones.toLocaleString()}</td>
-                                        <td>${revenue.toLocaleString()}</td>
                                     </tr>
                                 `);
                             });
@@ -216,9 +180,8 @@
                     document.getElementById('totalHourlySubs').querySelector('span').textContent = totalSubs.toLocaleString();
                     document.getElementById('totalHourlyUnsubs').querySelector('span').textContent = totalUnsubs.toLocaleString();
                     document.getElementById('totalHourlyTones').querySelector('span').textContent = totalTones.toLocaleString();
-                    document.getElementById('totalHourlyRevenue').querySelector('span').textContent = totalRev.toLocaleString();
 
-                    initCharts(labels, subs, rev);
+                    initCharts(labels, subs);
                 }
 
                 document.getElementById('paginationInfo').textContent = `Page ${pagination.current_page} of ${pagination.last_page}`;
@@ -236,7 +199,7 @@
                     });
                 });
             } catch(e) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-danger text-center">Error loading data</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-danger text-center">Error loading data</td></tr>';
                 initCharts();
             }
         }

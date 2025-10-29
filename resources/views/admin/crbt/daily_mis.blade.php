@@ -41,7 +41,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="card">
             <div class="card-body">
                 <h6 class="text-muted mb-3">Active Subscribers</h6>
@@ -52,38 +52,17 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card">
-            <div class="card-body">
-                <h6 class="text-muted mb-3">Revenue</h6>
-                <h3 class="f-w-300 d-flex align-items-center m-b-0" id="totalRevenue">
-                    <i class="feather icon-dollar-sign text-warning f-24 m-r-5"></i>
-                    <span>Loading...</span>
-                </h3>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Charts Section -->
 <div class="row mt-4">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h5>Subscription Trend</h5>
             </div>
             <div class="card-body">
                 <canvas id="subscriptionChart" style="height: 300px;"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5>Revenue Trend</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="revenueChart" style="height: 300px;"></canvas>
             </div>
         </div>
     </div>
@@ -106,15 +85,14 @@
                         <th>Total Unsubscriptions</th>
                         <th>Active Subscribers</th>
                         <th>Tone Downloads</th>
-                        <th>Revenue</th>
                     </tr>
                 </thead>
                         <tbody id="dailyMisBody">
-                            <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                            <tr><td colspan="5" class="text-center">Loading...</td></tr>
                 </tbody>
             </table>
-                </div>
-                
+</div>
+
                 <!-- Pagination -->
                 <nav aria-label="Daily MIS pagination" class="mt-3">
                     <ul class="pagination justify-content-center" id="dailyMisPagination">
@@ -130,7 +108,7 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         console.log('DOM Content Loaded');
-        let subscriptionChart, revenueChart;
+        let subscriptionChart;
         let currentPage = 1;
         let totalPages = 1;
         let perPage = 10;
@@ -149,22 +127,14 @@
         // Test Chart.js
         console.log('Chart.js available:', typeof Chart !== 'undefined');
 
-        function initCharts(labels = [], subs = [], revenue = []) {
+        function initCharts(labels = [], subs = []) {
         const subscriptionCtx = document.getElementById('subscriptionChart').getContext('2d');
-            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
 
             if (subscriptionChart) subscriptionChart.destroy();
-            if (revenueChart) revenueChart.destroy();
 
             subscriptionChart = new Chart(subscriptionCtx, {
             type: 'line',
                 data: { labels, datasets: [{ label: 'Subscriptions', data: subs, borderColor: 'rgb(75, 192, 192)', tension: 0.1 }] },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            revenueChart = new Chart(revenueCtx, {
-                type: 'bar',
-                data: { labels, datasets: [{ label: 'Revenue', data: revenue, backgroundColor: 'rgba(54, 162, 235, 0.5)', borderColor: 'rgb(54, 162, 235)', borderWidth: 1 }] },
                 options: { responsive: true, maintainAspectRatio: false }
             });
         }
@@ -184,8 +154,8 @@
 
             const url = `/api/crbt/daily-mis?${params.toString()}`;
             console.log('Fetching URL:', url);
-            const tbody = document.getElementById('dailyMisBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
+                const tbody = document.getElementById('dailyMisBody');
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">Loading...</td></tr>';
 
             try {
                 const res = await fetch(url);
@@ -202,13 +172,12 @@
                 currentPage = pagination.current_page || 1;
 
                 if (rows.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No data</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="text-center">No data</td></tr>';
                     
                     // Update summary cards to show 0 when no data
                     document.getElementById('totalSubscriptions').querySelector('span').textContent = '0';
                     document.getElementById('totalUnsubscriptions').querySelector('span').textContent = '0';
                     document.getElementById('activeSubscribers').querySelector('span').textContent = '0';
-                    document.getElementById('totalRevenue').querySelector('span').textContent = '0';
                     
                     initCharts();
                     generatePagination(); // Generate pagination even if no data
@@ -217,8 +186,7 @@
 
                 const labels = [];
                 const subs = [];
-                const rev = [];
-                let totalSubs = 0, totalUnsubs = 0, totalActive = 0, totalRev = 0;
+                let totalSubs = 0, totalUnsubs = 0, totalActive = 0;
                 tbody.innerHTML = '';
 
                         rows.forEach(r => {
@@ -227,19 +195,16 @@
                             const subsCount = Number(r.activeNrml || 0); // New subscriptions (daily activations)
                             const unsubsCount = Number(r.vchurnNrml || 0); // Unsubscriptions (daily deactivations)
                             const activeCount = Number(r.activeBase || 0); // Active subscribers (total active base)
-                            const revenue = Number(r.SubsRev || 0) + Number(r.RenewRev || 0); // Total revenue
                             const toneDownloads = Number(r.VsmsSuccess || 0); // Tone downloads
                             
-                            console.log('Processing row:', { date, subsCount, unsubsCount, activeCount, revenue, toneDownloads });
+                            console.log('Processing row:', { date, subsCount, unsubsCount, activeCount, toneDownloads });
                             
                             labels.push(date);
                             subs.push(subsCount);
-                            rev.push(revenue);
                             
                             totalSubs += subsCount;
                             totalUnsubs += unsubsCount;
                             totalActive += activeCount;
-                            totalRev += revenue;
                             
                             tbody.insertAdjacentHTML('beforeend', `
                                 <tr>
@@ -248,7 +213,6 @@
                                     <td>${unsubsCount.toLocaleString()}</td>
                                     <td>${activeCount.toLocaleString()}</td>
                                     <td>${toneDownloads.toLocaleString()}</td>
-                                    <td>${revenue.toLocaleString()}</td>
                                 </tr>
                             `);
                         });
@@ -257,14 +221,13 @@
                 document.getElementById('totalSubscriptions').querySelector('span').textContent = totalSubs.toLocaleString();
                 document.getElementById('totalUnsubscriptions').querySelector('span').textContent = totalUnsubs.toLocaleString();
                 document.getElementById('activeSubscribers').querySelector('span').textContent = totalActive.toLocaleString();
-                document.getElementById('totalRevenue').querySelector('span').textContent = totalRev.toLocaleString();
 
                 // Generate pagination controls
                 generatePagination();
 
-                initCharts(labels, subs, rev);
+                initCharts(labels, subs);
             } catch (e) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-danger text-center">Error loading data</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-danger text-center">Error loading data</td></tr>`;
                 initCharts();
             }
         }

@@ -135,7 +135,6 @@ Route::middleware('auth')->prefix('crbt')->name('crbt.')->group(function () {
     Route::get('/hlr-activations', [CRBTController::class, 'hlrActivations'])->name('hlr_activations');
     Route::get('/user-info', [CRBTController::class, 'userInfo'])->name('user_info');
     Route::get('/user-tone-info', [CRBTController::class, 'userToneInfo'])->name('user_tone_info');
-    Route::get('/billing-charges', [CRBTController::class, 'billingCharges'])->name('billing_charges');
 
     // Corporate CRBT Reports
     Route::get('/corporate-info', [CRBTController::class, 'corporateInfo'])->name('corporate_info');
@@ -155,5 +154,4 @@ Route::prefix('api/crbt')->name('api.crbt.')->group(function () {
     Route::get('/hlr-activations', [CRBTController::class, 'getHLRActivationsData'])->name('hlr_activations');
     Route::get('/user-info', [CRBTController::class, 'getUserInfoData'])->name('user_info');
     Route::get('/user-tone-info', [CRBTController::class, 'getUserToneInfoData'])->name('user_tone_info');
-    Route::get('/billing-charges', [CRBTController::class, 'getBillingChargesData'])->name('billing_charges');
 });

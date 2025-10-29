@@ -90,21 +90,21 @@
           </div>
           <!-- [ CRBT Daily Active ] end -->
 
-          <!-- [ Emergency Credit Revenue ] start -->
+          <!-- [ Emergency Credit Daily Users ] start -->
           <div class="col-md-6 col-xl-3">
             <div class="card">
               <div class="card-body">
-                <h6 class="mb-4">Emergency Credit Revenue</h6>
+                <h6 class="mb-4">Emergency Credit Users (Last 30 Days)</h6>
                 <div class="row d-flex align-items-center">
                   <div class="col-9">
                     <h3 class="f-w-300 d-flex align-items-center m-b-0">
-                      <i class="feather icon-credit-card text-warning f-30 m-r-10"></i>
-                      <span id="emergency-revenue">Loading...</span>
+                      <i class="feather icon-users text-warning f-30 m-r-10"></i>
+                      <span id="emergency-users">0</span>
                     </h3>
                   </div>
                   <div class="col-3 text-end">
                     <p class="m-b-0">
-                      <span class="badge bg-light-warning" id="emergency-transactions">Loading...</span>
+                      <span class="badge bg-light-warning" id="emergency-transactions">0 Txn</span>
                     </p>
                   </div>
                 </div>
@@ -114,7 +114,7 @@
               </div>
             </div>
           </div>
-          <!-- [ Emergency Credit Revenue ] end -->
+          <!-- [ Emergency Credit Daily Users ] end -->
 
           <!-- [ System Health ] start -->
           <div class="col-md-6 col-xl-3">
@@ -370,17 +370,25 @@
         async function loadSDFStatusDistribution() {
             try {
                 console.log('Loading SDF status distribution...');
-                const response = await fetch(`${window.AppConfig.baseUrl}/api/v1/status-analysis`);
+                // Get data for the last 30 days to ensure we have meaningful data
+                const endDate = new Date().toISOString().split('T')[0];
+                const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                
+                const response = await fetch(`${window.AppConfig.baseUrl}/api/v1/status-analysis?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
                 console.log('SDF status data received:', data);
+                
+                console.log('Full API response:', data);
+                console.log('Status distribution from API:', data.status_distribution);
                 
                 if (data.status_distribution && data.status_distribution.length > 0) {
                     const statusData = data.status_distribution;
                     const labels = statusData.map(item => item.status);
                     const values = statusData.map(item => item.count);
                     
-                    console.log('SDF status labels:', labels);
-                    console.log('SDF status values:', values);
+                    console.log('Before update - Labels:', labels);
+                    console.log('Before update - Values:', values);
+                    console.log('CANCELED count from API:', values[labels.indexOf('CANCELED')]);
                     
                     // Update SDF Status Chart with real data
                     updateSDFStatusChart(labels, values);
@@ -448,42 +456,42 @@
 
         async function loadEmergencyCreditData() {
             try {
-                // Get current date range for last 30 days
+                // Get date range for last 30 days
                 const endDate = new Date().toISOString().split('T')[0];
                 const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
                 
-                console.log('Loading Emergency Credit data...');
-                console.log('Date range:', startDate, 'to', endDate);
+                console.log('Loading Emergency Credit data from:', startDate, 'to', endDate);
                 
-                const response = await fetch(`${window.AppConfig.baseUrl}/api/v1/emergency-credit/revenue-summary/data?start_date=${startDate}&end_date=${endDate}`);
+                // Call top users API which gives us unique user count
+                const response = await fetch(`${window.AppConfig.baseUrl}/emergency-credit/top-users/data?start_date=${startDate}&end_date=${endDate}`);
                 const data = await response.json();
                 console.log('Emergency Credit data received:', data);
                 
-                if (data.revenueData && data.revenueData.length > 0) {
-                    const totalRevenue = data.revenueData.reduce((sum, item) => sum + parseFloat(item.total_credit), 0);
-                    const totalPaid = data.revenueData.reduce((sum, item) => sum + parseFloat(item.total_paid), 0);
+                if (data.data && data.data.length > 0) {
+                    // Total unique users in the result set
+                    const uniqueUsers = data.total || data.data.length;
+                    // Total transactions would be sum of all txn_count
+                    const totalTransactions = data.data.reduce((sum, user) => sum + parseInt(user.txn_count || 0), 0);
                     
-                    document.getElementById('emergency-revenue').textContent = `${totalRevenue.toFixed(2)}K`;
-                    document.getElementById('emergency-transactions').textContent = `${data.revenueData.length} Days`;
+                    document.getElementById('emergency-users').textContent = uniqueUsers.toLocaleString();
+                    document.getElementById('emergency-transactions').textContent = `${totalTransactions} Txn`;
                     
-                    const progress = totalRevenue > 0 ? (totalPaid / totalRevenue) * 100 : 0;
-                    document.getElementById('emergency-progress').style.width = `${Math.min(progress, 100)}%`;
+                    // Set progress bar based on activity
+                    const progress = uniqueUsers > 0 ? 100 : 0;
+                    document.getElementById('emergency-progress').style.width = `${progress}%`;
                     
-                    console.log('Emergency Credit revenue data:', data.revenueData);
-                    
-                    // Update revenue trends chart with real data
-                    updateRevenueTrendsChart(data.revenueData);
+                    console.log('Emergency Credit unique users:', uniqueUsers, 'Total transactions:', totalTransactions);
                 } else {
                     console.log('No Emergency Credit data available');
-                    document.getElementById('emergency-revenue').textContent = '0.00K';
-                    document.getElementById('emergency-transactions').textContent = 'No Data';
+                    document.getElementById('emergency-users').textContent = '0';
+                    document.getElementById('emergency-transactions').textContent = '0 Txn';
                     document.getElementById('emergency-progress').style.width = '0%';
                 }
                 
             } catch (error) {
                 console.error('Error loading Emergency Credit data:', error);
-                document.getElementById('emergency-revenue').textContent = '0.00K';
-                document.getElementById('emergency-transactions').textContent = 'No Data';
+                document.getElementById('emergency-users').textContent = '0';
+                document.getElementById('emergency-transactions').textContent = '0 Txn';
             }
         }
 
@@ -509,14 +517,14 @@
             try {
                 sdfStatusChart = new ApexCharts(sdfElement, {
                     series: [45, 25, 15],
-                chart: {
-                    type: 'donut',
+                    chart: {
+                        type: 'donut',
                         height: 300
-                },
+                    },
                     labels: ['ACTIVE', 'FAILED', 'CANCELED'],
-                colors: ['#4CAF50', '#F44336', '#FFC107'],
-                legend: {
-                    position: 'bottom'
+                    colors: ['#4CAF50', '#F44336', '#FFC107'],
+                    legend: {
+                        position: 'bottom'
                     },
                     plotOptions: {
                         pie: {
@@ -524,6 +532,9 @@
                                 size: '70%'
                             }
                         }
+                    },
+                    dataLabels: {
+                        enabled: true
                     }
                 });
                 sdfStatusChart.render();
@@ -591,34 +602,82 @@
 
         function updateSDFStatusChart(labels, values) {
             console.log('Updating SDF Status Chart with:', labels, values);
-            if (sdfStatusChart) {
-                // Ensure all three statuses are represented, even if they have 0 count
-                const allLabels = ['ACTIVE', 'FAILED', 'CANCELED'];
-                const allValues = allLabels.map(label => {
-                    const index = labels.indexOf(label);
-                    const value = index !== -1 ? values[index] : 0;
-                    // Show a small value for 0 counts to make them visible in the chart
-                    return value === 0 ? 1 : value;
-                });
+            console.log('Current sdfStatusChart exists:', !!sdfStatusChart);
+            
+            if (!sdfStatusChart) {
+                console.error('SDF Status Chart not initialized');
+                return;
+            }
+            
+            // Filter out CANCELED if its value is 0
+            const filteredLabels = [];
+            const filteredValues = [];
+            
+            labels.forEach((label, index) => {
+                // Skip CANCELED if it has 0 value
+                if (label === 'CANCELED' && values[index] === 0) {
+                    console.log('Skipping CANCELED because value is 0');
+                    return;
+                }
+                filteredLabels.push(label);
+                filteredValues.push(values[index]);
+            });
+            
+            console.log('Displaying labels:', filteredLabels);
+            console.log('Displaying values:', filteredValues);
+            
+            // Check if all values are zero
+            const allValuesZero = filteredValues.every(v => v === 0);
+            
+            if (filteredValues.length === 0 || allValuesZero) {
+                console.log('No valid data to display (all zeros or empty), keeping sample data');
+                return; // Don't update if no data or all zeros
+            }
+            
+            // Always recreate the chart to ensure it's visible
+            const chartElement = document.querySelector("#sdf-status-chart");
+            if (chartElement) {
+                console.log('Recreating chart with filtered data');
+                try {
+                    if (sdfStatusChart) {
+                        sdfStatusChart.destroy();
+                    }
+                } catch (e) {
+                    console.log('No existing chart to destroy');
+                }
                 
-                console.log('Normalized chart data:', allLabels, allValues);
-                
-                sdfStatusChart.updateOptions({
-                    series: allValues,
-                    labels: allLabels,
+                sdfStatusChart = new ApexCharts(chartElement, {
+                    series: filteredValues,
+                    chart: {
+                        type: 'donut',
+                        height: 300
+                    },
+                    labels: filteredLabels,
+                    colors: ['#4CAF50', '#F44336', '#FFC107'],
+                    legend: {
+                        position: 'bottom',
+                        showForZeroSeries: false
+                    },
+                    dataLabels: {
+                        enabled: true,
+                        formatter: function(val) {
+                            return val.toFixed(1) + '%';
+                        }
+                    },
                     tooltip: {
                         y: {
-                            formatter: function (val, opts) {
-                                const label = opts.w.globals.labels[opts.seriesIndex];
-                                const originalValue = labels.indexOf(label) !== -1 ? values[labels.indexOf(label)] : 0;
-                                return originalValue === 0 ? '0' : val.toLocaleString();
+                            formatter: function(val, opts) {
+                                const label = opts.w.config.labels[opts.seriesIndex];
+                                const value = opts.w.config.series[opts.seriesIndex];
+                                return `${label}: ${value.toLocaleString()} (${val.toFixed(1)}%)`;
                             }
                         }
                     }
                 });
-                console.log('SDF Status Chart updated successfully');
+                sdfStatusChart.render();
+                console.log('Chart recreated and rendered successfully');
             } else {
-                console.error('SDF Status Chart not initialized');
+                console.error('Chart element not found!');
             }
         }
 

@@ -116,9 +116,6 @@
     <li class="pc-item">
       <a href="{{ route('crbt.user_tone_info') }}" class="pc-link" style="font-size: 14px;">User Tone Information</a>
     </li>
-    <li class="pc-item">
-      <a href="{{ route('crbt.billing_charges') }}" class="pc-link" style="font-size: 14px;">Billing & Charges</a>
-    </li>
   </ul>
 </li>
 

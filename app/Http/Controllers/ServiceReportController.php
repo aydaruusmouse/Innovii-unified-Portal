@@ -331,9 +331,9 @@ class ServiceReportController extends Controller
 
             // Calculate status totals
             $statusTotals = [
-                'active' => $allData->where('status', 'ACTIVE')->sum('base_count'),
-                'failed' => $allData->where('status', 'FAILED')->sum('base_count'),
-                'canceled' => $allData->where('status', 'CANCELED')->sum('base_count')
+                'active' => $allData->where('status', 'ACTIVE')->sum('base_count') ?? 0,
+                'failed' => $allData->where('status', 'FAILED')->sum('base_count') ?? 0,
+                'canceled' => $allData->where('status', 'CANCELED')->sum('base_count') ?? 0
             ];
 
             // Group data by date for trend chart
@@ -355,11 +355,17 @@ class ServiceReportController extends Controller
                                 });
 
             // Create status distribution for dashboard chart
+            // Always include all three statuses, even if count is 0
             $statusDistribution = [
-                ['status' => 'ACTIVE', 'count' => $statusTotals['active']],
-                ['status' => 'FAILED', 'count' => $statusTotals['failed']],
-                ['status' => 'CANCELED', 'count' => $statusTotals['canceled']]
+                ['status' => 'ACTIVE', 'count' => (int)$statusTotals['active']],
+                ['status' => 'FAILED', 'count' => (int)$statusTotals['failed']],
+                ['status' => 'CANCELED', 'count' => (int)$statusTotals['canceled']]
             ];
+            
+            \Log::info('Status distribution prepared:', [
+                'status_distribution' => $statusDistribution,
+                'all_data_count' => $allData->count()
+            ]);
 
             return response()->json([
                 'table_data' => $paginatedData->items(),
