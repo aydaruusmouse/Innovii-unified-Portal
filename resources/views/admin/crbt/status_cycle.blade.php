@@ -216,7 +216,9 @@
                 const activeData = [];
                 const graceData = [];
                 const suspendData = [];
-                let totalActive = 0, totalGrace = 0, totalSuspend = 0, totalChurn = 0;
+                // Track latest snapshot (most recent date)
+                let latestDate = null;
+                let latestActive = 0, latestGrace = 0, latestSuspend = 0, latestChurn = 0;
                 tbody.innerHTML = '';
 
                 rows.forEach(r => {
@@ -232,10 +234,14 @@
                     graceData.push(grace);
                     suspendData.push(suspend);
                     
-                    totalActive += active;
-                    totalGrace += grace;
-                    totalSuspend += suspend;
-                    totalChurn += vchurn + invchurn;
+                    // Maintain latest snapshot values
+                    if (!latestDate || new Date(date) > new Date(latestDate)) {
+                        latestDate = date;
+                        latestActive = active;
+                        latestGrace = grace;
+                        latestSuspend = suspend;
+                        latestChurn = vchurn + invchurn;
+                    }
                     
                     tbody.insertAdjacentHTML('beforeend', `
                         <tr>
@@ -249,11 +255,11 @@
                     `);
                 });
 
-                // Update summary cards
-                document.getElementById('totalActive').querySelector('span').textContent = totalActive.toLocaleString();
-                document.getElementById('totalGrace').querySelector('span').textContent = totalGrace.toLocaleString();
-                document.getElementById('totalSuspended').querySelector('span').textContent = totalSuspend.toLocaleString();
-                document.getElementById('totalChurned').querySelector('span').textContent = totalChurn.toLocaleString();
+                // Update summary cards using latest snapshot values
+                document.getElementById('totalActive').querySelector('span').textContent = Number(latestActive).toLocaleString();
+                document.getElementById('totalGrace').querySelector('span').textContent = Number(latestGrace).toLocaleString();
+                document.getElementById('totalSuspended').querySelector('span').textContent = Number(latestSuspend).toLocaleString();
+                document.getElementById('totalChurned').querySelector('span').textContent = Number(latestChurn).toLocaleString();
 
                 // Generate pagination controls
                 generatePagination();
